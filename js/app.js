@@ -1,7 +1,12 @@
-mapboxgl.accessToken = 'pk.eyJ1IjoiZ2F0aXNicmF1bnMiLCJhIjoiY21mZmd5M3l5MGVlMTJtc2ZjNmQxcnJibyJ9.zV-sHT7Skewg0tSlRqxbVA';
+const cfg = window.APP_CONFIG || {};
+if (!cfg.MAPBOX_TOKEN || !cfg.DATA_URL) {
+  alert('Trūkst konfigurācijas. Pārbaudi .env (MAPBOX_TOKEN un DATA_URL).');
+  throw new Error('Missing MAPBOX_TOKEN or DATA_URL');
+}
 
-const DATA_URL =
-  'https://script.google.com/macros/s/AKfycbzWd7a_KT12EtY0U7ys-wTftiR-sRT0bg8jORAr7CrU4veQUMIHz7FhsfusRiSAFUxz/exec';
+mapboxgl.accessToken = cfg.MAPBOX_TOKEN;
+
+const DATA_URL = cfg.DATA_URL;
 
 let allFeatures = [];
 
@@ -16,12 +21,9 @@ map.on('load', async () => {
   const res = await fetch(DATA_URL);
   const geojson = await res.json();
 
-  allFeatures = geojson.features;
+  allFeatures = geojson.features || [];
 
-  map.addSource('stones', {
-    type: 'geojson',
-    data: geojson
-  });
+  map.addSource('stones', { type: 'geojson', data: geojson });
 
   map.addLayer({
     id: 'stones-layer',
@@ -46,23 +48,22 @@ map.on('load', async () => {
 
 map.on('click', 'stones-layer', (e) => {
   const f = e.features[0];
-  const p = f.properties;
-
-  const photos = JSON.parse(p.photos || '[]');
+  const p = f.properties || {};
+  const photos = getPhotos(p);
 
   let html = `
-    <div class="popup-title">${p.title || 'Bez nosaukuma'}</div>
-    <div class="popup-meta">${p.author} · ${p.date}</div>
+    <div class="popup-title">${escapeHtml(p.title || 'Bez nosaukuma')}</div>
+    <div class="popup-meta">${escapeHtml(p.author || '')} · ${escapeHtml(p.date || '')}</div>
   `;
 
   if (p.description) {
-    html += `<div class="popup-desc">${p.description}</div>`;
+    html += `<div class="popup-desc">${escapeHtml(p.description)}</div>`;
   }
 
   if (photos.length) {
     html += `<div class="popup-images">`;
     photos.forEach(url => {
-      html += `<img src="${url}" loading="lazy" />`;
+      html += `<img src="${escapeAttr(url)}" loading="lazy" referrerpolicy="no-referrer" />`;
     });
     html += `</div>`;
   }
@@ -77,33 +78,43 @@ map.on('click', 'stones-layer', (e) => {
     .addTo(map);
 });
 
-map.on('mouseenter', 'stones-layer', () => {
-  map.getCanvas().style.cursor = 'pointer';
-});
+map.on('mouseenter', 'stones-layer', () => { map.getCanvas().style.cursor = 'pointer'; });
+map.on('mouseleave', 'stones-layer', () => { map.getCanvas().style.cursor = ''; });
 
-map.on('mouseleave', 'stones-layer', () => {
-  map.getCanvas().style.cursor = '';
-});
+document.getElementById('filter-author').addEventListener('change', applyFilters);
+document.getElementById('filter-year').addEventListener('change', applyFilters);
+document.getElementById('filter-missing').addEventListener('change', applyFilters);
 
-document
-  .getElementById('filter-author')
-  .addEventListener('change', applyFilters);
-document
-  .getElementById('filter-year')
-  .addEventListener('change', applyFilters);
-document
-  .getElementById('filter-missing')
-  .addEventListener('change', applyFilters);
+function getPhotos(props) {
+  const v = props.photos;
+
+  if (Array.isArray(v)) return v.filter(Boolean);
+  if (!v) return [];
+
+  const s = String(v).trim();
+  if (!s) return [];
+
+  if (s.startsWith('[')) {
+    try {
+      const arr = JSON.parse(s);
+      return Array.isArray(arr) ? arr.filter(Boolean) : [];
+    } catch (e) {}
+  }
+
+  return s
+    .split(/\r?\n|\||,/g)
+    .map(x => x.trim())
+    .filter(Boolean);
+}
 
 function populateFilters() {
   const authors = new Set();
   const years = new Set();
 
   allFeatures.forEach(f => {
-    authors.add(f.properties.author);
-    if (f.properties.date) {
-      years.add(f.properties.date.substring(0, 4));
-    }
+    const p = f.properties || {};
+    if (p.author) authors.add(p.author);
+    if (p.date && String(p.date).length >= 4) years.add(String(p.date).substring(0, 4));
   });
 
   const authorSelect = document.getElementById('filter-author');
@@ -124,19 +135,32 @@ function populateFilters() {
 }
 
 function applyFilters() {
+  if (!map.getSource('stones')) return;
+
   const author = document.getElementById('filter-author').value;
   const year = document.getElementById('filter-year').value;
   const missing = document.getElementById('filter-missing').checked;
 
   const filtered = allFeatures.filter(f => {
-    if (author && f.properties.author !== author) return false;
-    if (year && !f.properties.date.startsWith(year)) return false;
-    if (missing && f.properties.missing_info !== true && f.properties.missing_info !== 'true') return false;
+    const p = f.properties || {};
+    if (author && p.author !== author) return false;
+    if (year && (!p.date || !String(p.date).startsWith(year))) return false;
+    if (missing && p.missing_info !== true && p.missing_info !== 'true') return false;
     return true;
   });
 
-  map.getSource('stones').setData({
-    type: 'FeatureCollection',
-    features: filtered
-  });
+  map.getSource('stones').setData({ type: 'FeatureCollection', features: filtered });
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function escapeAttr(s) {
+  return escapeHtml(s).replaceAll('`', '&#096;');
 }
