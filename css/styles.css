@@ -15,36 +15,129 @@ html, body {
 }
 
 #sidebar {
-  width: 260px;
+  width: 300px;
   padding: 16px;
   background: #ffffff;
   border-right: 1px solid #ddd;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 #sidebar h1 {
   font-size: 18px;
-  margin: 0 0 16px 0;
+  margin: 0 0 6px 0;
 }
 
 #sidebar label {
   display: block;
-  margin-bottom: 12px;
   font-size: 14px;
 }
 
-#sidebar select {
+#sidebar select, #sidebar input {
   width: 100%;
-  padding: 6px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  margin-top: 6px;
+  font-size: 14px;
+  outline: none;
+}
+
+#sidebar input:focus, #sidebar select:focus {
+  border-color: #bdbdbd;
 }
 
 .checkbox {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 14px;
 }
 
 #map {
   flex: 1;
+}
+
+/* Objekti */
+#list-title {
+  font-size: 13px;
+  color: #555;
+  margin-top: 2px;
+}
+
+#objects-list {
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  overflow: auto;
+  padding: 6px;
+  flex: 1;
+  min-height: 140px;
+  background: #fafafa;
+}
+
+.obj-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #eee;
+  margin-bottom: 6px;
+}
+
+.obj-item:hover {
+  background: #f7f7f7;
+}
+
+.obj-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  margin-top: 4px;
+  flex: 0 0 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+}
+
+.obj-dot.ok {
+  background: #1d3557;
+}
+
+.obj-dot.missing {
+  background: #e63946;
+}
+
+.obj-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.obj-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.obj-sub {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.obj-empty {
+  font-size: 13px;
+  color: #666;
+  padding: 10px;
 }
 
 /* Mobile */
@@ -57,14 +150,15 @@ html, body {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #ddd;
+    height: 300px;
   }
 
   #map {
-    height: calc(100vh - 220px);
+    height: calc(100vh - 300px);
   }
 }
 
-/* Mapbox popup fix (lai saturs nelien ārā) */
+/* Mapbox popup fix */
 .mapboxgl-popup-content {
   padding: 12px;
   max-width: 280px;
@@ -72,10 +166,7 @@ html, body {
 }
 
 /* Popup */
-.popup-wrap {
-  width: 100%;
-  max-width: 260px;
-}
+.popup-wrap { width: 100%; max-width: 260px; }
 
 .popup-title {
   font-weight: 700;
@@ -129,12 +220,6 @@ html, body {
   color: #222;
 }
 
-.popup-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
 .popup-chip {
   font-size: 12px;
   padding: 3px 8px;
@@ -160,7 +245,7 @@ html, body {
 .slideshow img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* svarīgi, lai bilde neiziet ārpus rāmja */
+  object-fit: contain;
   background: #f5f5f5;
   display: block;
 }
@@ -181,22 +266,12 @@ html, body {
   user-select: none;
 }
 
-.slide-btn:hover {
-  background: rgba(255,255,255,1);
-}
+.slide-btn:hover { background: rgba(255,255,255,1); }
 
-.slide-prev {
-  left: 8px;
-}
+.slide-prev { left: 8px; }
+.slide-next { right: 8px; }
 
-.slide-next {
-  right: 8px;
-}
-
-.slide-btn svg {
-  width: 18px;
-  height: 18px;
-}
+.slide-btn svg { width: 18px; height: 18px; }
 
 .slide-counter {
   position: absolute;
@@ -209,9 +284,8 @@ html, body {
   color: #fff;
 }
 
-.slide-hidden {
-  display: none;
-}
+.slide-hidden { display: none; }
+
 /* Footer */
 #footer {
   position: fixed;
