@@ -6,10 +6,16 @@ if (!cfg.MAPBOX_TOKEN || !cfg.DATA_URL) {
 
 mapboxgl.accessToken = cfg.MAPBOX_TOKEN;
 const DATA_URL = cfg.DATA_URL;
+const REGISTRY_URL = '/data/country_continent_lv.json';
 
 let allFeatures = [];
 let filteredFeatures = [];
 let activePopup = null;
+
+// Country/continent registry (server side file)
+let registryPairs = [];
+let countryToContinent = new Map();      // country -> continent
+let continentToCountries = new Map();    // continent -> Set(countries)
 
 const map = new mapboxgl.Map({
   container: 'map',
@@ -19,19 +25,46 @@ const map = new mapboxgl.Map({
 });
 
 map.on('load', async () => {
-  const res = await fetch(DATA_URL);
-  const geojson = await res.json();
+  // Load registry + geojson in parallel
+  const [registryRes, dataRes] = await Promise.all([
+    fetch(REGISTRY_URL, { cache: 'force-cache' }),
+    fetch(DATA_URL)
+  ]);
+
+  if (!registryRes.ok) {
+    console.warn('Neizdevās ielādēt reģistru:', REGISTRY_URL, registryRes.status);
+  } else {
+    try {
+      registryPairs = await registryRes.json();
+      buildRegistryMaps(registryPairs);
+      console.log('[Registry] loaded pairs:', registryPairs.length);
+    } catch (e) {
+      console.warn('Reģistra JSON nav nolasāms:', e);
+    }
+  }
+
+  const geojson = await dataRes.json();
 
   allFeatures = (geojson.features || []).map((f, i) => {
+    if (!f.properties) f.properties = {};
+
+    // Stabils UID priekš list click + popup
     const uidBase =
       (f.properties && (f.properties.id || f.properties.title))
         ? String(f.properties.id || f.properties.title)
         : `row_${i}`;
     f.__uid = `${uidBase}__${i}`;
+
+    // Normalizē missing_info uz boolean, lai Mapbox layer krāsa strādā vienādi
+    f.properties.missing_info = normalizeBoolean(f.properties.missing_info);
+
+    // Normalizē country (trim)
+    if (typeof f.properties.country === 'string') f.properties.country = f.properties.country.trim();
+
     return f;
   });
 
-  map.addSource('stones', { type: 'geojson', data: geojson });
+  map.addSource('stones', { type: 'geojson', data: { type: 'FeatureCollection', features: allFeatures } });
 
   map.addLayer({
     id: 'stones-layer',
@@ -55,7 +88,8 @@ map.on('load', async () => {
 });
 
 map.on('click', 'stones-layer', (e) => {
-  const f = e.features[0];
+  const f = e.features && e.features[0];
+  if (!f) return;
   openFeaturePopup(f, f.geometry.coordinates);
 });
 
@@ -66,6 +100,47 @@ document.getElementById('filter-author').addEventListener('change', applyFilters
 document.getElementById('filter-year').addEventListener('change', applyFilters);
 document.getElementById('filter-missing').addEventListener('change', applyFilters);
 document.getElementById('filter-search').addEventListener('input', applyFilters);
+
+// New: continent + country filters
+document.getElementById('filter-continent').addEventListener('change', onContinentChange);
+document.getElementById('filter-country').addEventListener('change', applyFilters);
+
+function onContinentChange() {
+  // main rule: mainot kontinentu, valsts tiek resetota un pārbūvēts valstu saraksts
+  const continent = document.getElementById('filter-continent').value;
+  populateCountryFilter(continent);
+  document.getElementById('filter-country').value = '';
+  applyFilters();
+}
+
+function normalizeBoolean(v) {
+  if (v === true) return true;
+  if (v === false) return false;
+  if (v === 1 || v === '1') return true;
+  const s = String(v || '').trim().toLowerCase();
+  if (!s) return false;
+  return s === 'true' || s === 'yes' || s === 'x' || s === 'on';
+}
+
+function buildRegistryMaps(pairs) {
+  countryToContinent = new Map();
+  continentToCountries = new Map();
+
+  if (!Array.isArray(pairs)) return;
+
+  pairs.forEach(item => {
+    const country = String(item.country || '').trim();
+    const continent = String(item.continent || '').trim();
+    if (!country || !continent) return;
+
+    countryToContinent.set(country, continent);
+
+    if (!continentToCountries.has(continent)) {
+      continentToCountries.set(continent, new Set());
+    }
+    continentToCountries.get(continent).add(country);
+  });
+}
 
 function populateFilters() {
   const authors = new Set();
@@ -78,7 +153,8 @@ function populateFilters() {
   });
 
   const authorSelect = document.getElementById('filter-author');
-  [...authors].sort().forEach(a => {
+  authorSelect.innerHTML = '<option value="">Visi</option>';
+  [...authors].sort((a, b) => String(a).localeCompare(String(b), 'lv')).forEach(a => {
     const o = document.createElement('option');
     o.value = a;
     o.textContent = a;
@@ -86,11 +162,71 @@ function populateFilters() {
   });
 
   const yearSelect = document.getElementById('filter-year');
+  yearSelect.innerHTML = '<option value="">Visi</option>';
   [...years].sort().forEach(y => {
     const o = document.createElement('option');
     o.value = y;
     o.textContent = y;
     yearSelect.appendChild(o);
+  });
+
+  // New: continents from registry (fallback: derive from features if registry not loaded)
+  populateContinentFilter();
+  populateCountryFilter(''); // initially all
+}
+
+function populateContinentFilter() {
+  const continentSelect = document.getElementById('filter-continent');
+  continentSelect.innerHTML = '<option value="">Visi</option>';
+
+  let continents = [];
+
+  if (continentToCountries && continentToCountries.size) {
+    continents = [...continentToCountries.keys()];
+  } else {
+    // fallback: derive from features if registry is missing
+    const tmp = new Set();
+    allFeatures.forEach(f => {
+      const c = String((f.properties && f.properties.country) || '').trim();
+      const cont = countryToContinent.get(c);
+      if (cont) tmp.add(cont);
+    });
+    continents = [...tmp];
+  }
+
+  continents.sort((a, b) => String(a).localeCompare(String(b), 'lv')).forEach(cont => {
+    const o = document.createElement('option');
+    o.value = cont;
+    o.textContent = cont;
+    continentSelect.appendChild(o);
+  });
+}
+
+function populateCountryFilter(continent) {
+  const countrySelect = document.getElementById('filter-country');
+  countrySelect.innerHTML = '<option value="">Visas</option>';
+
+  let countries = [];
+
+  if (continent && continentToCountries && continentToCountries.has(continent)) {
+    countries = [...continentToCountries.get(continent)];
+  } else if (countryToContinent && countryToContinent.size) {
+    countries = [...countryToContinent.keys()];
+  } else {
+    // last fallback: derive from features
+    const tmp = new Set();
+    allFeatures.forEach(f => {
+      const c = String((f.properties && f.properties.country) || '').trim();
+      if (c) tmp.add(c);
+    });
+    countries = [...tmp];
+  }
+
+  countries.sort((a, b) => String(a).localeCompare(String(b), 'lv')).forEach(c => {
+    const o = document.createElement('option');
+    o.value = c;
+    o.textContent = c;
+    countrySelect.appendChild(o);
   });
 }
 
@@ -102,14 +238,26 @@ function applyFilters() {
   const missingOnly = document.getElementById('filter-missing').checked;
   const q = String(document.getElementById('filter-search').value || '').trim().toLowerCase();
 
+  const continent = document.getElementById('filter-continent').value;
+  const country = document.getElementById('filter-country').value;
+
   filteredFeatures = allFeatures.filter(f => {
     const p = f.properties || {};
 
     if (author && p.author !== author) return false;
     if (year && (!p.date || !String(p.date).startsWith(year))) return false;
 
-    const missing = (p.missing_info === true || p.missing_info === 'true');
-    if (missingOnly && !missing) return false;
+    if (missingOnly && !normalizeBoolean(p.missing_info)) return false;
+
+    // Country/continent filtering
+    const featureCountry = String(p.country || '').trim();
+
+    if (country) {
+      if (featureCountry !== country) return false;
+    } else if (continent) {
+      const featureContinent = countryToContinent.get(featureCountry);
+      if (featureContinent !== continent) return false;
+    }
 
     if (q) {
       const hay = `${p.title || ''} ${p.author || ''} ${p.description || ''} ${p.country || ''}`.toLowerCase();
@@ -144,14 +292,14 @@ function renderObjectsList() {
     const pb = b.properties || {};
     const ta = String(pa.title || pa.id || '').toLowerCase();
     const tb = String(pb.title || pb.id || '').toLowerCase();
-    return ta.localeCompare(tb);
+    return ta.localeCompare(tb, 'lv');
   });
 
   sorted.forEach((f) => {
     const p = f.properties || {};
-    const missing = (p.missing_info === true || p.missing_info === 'true');
+    const missing = normalizeBoolean(p.missing_info);
 
-    const title = getTitleWithCountry(p); // <-- te mainījām
+    const title = getTitleWithCountry(p);
     const sub = `${p.author || ''} · ${formatDateDDMMMYYYY(p.date)}`.trim();
 
     const item = document.createElement('div');
@@ -198,10 +346,10 @@ function openFeaturePopup(feature, lngLat) {
   const f = feature;
   const p = f.properties || {};
   const photos = getPhotos(p);
-  const missing = (p.missing_info === true || p.missing_info === 'true');
+  const missing = normalizeBoolean(p.missing_info);
 
   const dateText = formatDateDDMMMYYYY(p.date);
-  const titleText = escapeHtml(getTitleWithCountry(p)); // <-- te mainījām
+  const titleText = escapeHtml(getTitleWithCountry(p));
 
   const badge = missing
     ? `<span class="badge-missing">⚠️ missing info</span>`
@@ -370,5 +518,5 @@ function escapeHtml(s) {
 }
 
 function escapeAttr(s) {
-  return escapeHtml(s).replaceAll('`', '&#096;');
+  return escapeHtml(String(s)).replaceAll('\n', ' ').trim();
 }
