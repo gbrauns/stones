@@ -102,6 +102,8 @@
 
   { "country": "Meksika", "continent": "Ziemeļamerika" },
   { "country": "Moldova", "continent": "Eiropa" },
+  { "country": "Malta", "continent": "Eiropa" },
+  { "country": "Mongolija", "continent": "Āzija" },
 
   { "country": "Nīderlande", "continent": "Eiropa" },
   { "country": "Norvēģija", "continent": "Eiropa" },
