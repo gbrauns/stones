@@ -27,7 +27,7 @@ let unknownCountries = new Set();
 
 // valstis iekrāsošanai
 let activeIsoSet = new Set(); // ISO A2, kuriem count > 0 (filtered)
-let countriesFeatureIds = new Set(); // ISO A2, kas eksistē poligonu failā (lai nesauktu setFeatureState uz neesošiem)
+let countriesFeatureIds = new Set(); // ISO A2, kas eksistē poligonu failā
 
 const els = {
   totalCount: document.getElementById('total-count'),
@@ -57,7 +57,6 @@ const map = new mapboxgl.Map({
 map.on('load', async () => {
   initModal();
 
-  // Ielādē reģistru + akmeņus paralēli
   const [registryRes, dataRes] = await Promise.all([
     fetch(REGISTRY_URL, { cache: 'force-cache' }).catch(() => null),
     fetch(DATA_URL).catch(() => null)
@@ -67,12 +66,12 @@ map.on('load', async () => {
     try {
       registryPairs = await registryRes.json();
       buildRegistryMaps(registryPairs);
-      console.log('[Registry] loaded pairs:', registryPairs.length);
+      console.log('[Registry] pairs:', registryPairs.length, 'iso mapped:', countryToIsoA2.size);
     } catch (e) {
-      console.warn('Reģistra JSON nav nolasāms:', e);
+      console.warn('[Registry] JSON parse error:', e);
     }
   } else {
-    console.warn('Neizdevās ielādēt reģistru:', REGISTRY_URL);
+    console.warn('[Registry] failed to load:', REGISTRY_URL);
   }
 
   if (!dataRes || !dataRes.ok) {
@@ -96,7 +95,6 @@ map.on('load', async () => {
       f.properties.country = f.properties.country.trim();
     }
 
-    // foto normalizācija (mixed content fix)
     if (typeof f.properties.photos === 'string') {
       f.properties.photos = normalizePhotoField(f.properties.photos);
     } else if (Array.isArray(f.properties.photos)) {
@@ -109,10 +107,10 @@ map.on('load', async () => {
   updateTotalCountBadge(allFeatures.length);
   computeContinentStats();
 
-  // 1) Ielādē valstu poligonus un uztaisa slāņus iekrāsošanai
+  // 1) Countries polygons
   await addCountriesLayer();
 
-  // 2) Akmeņu source/layer
+  // 2) Stones points
   map.addSource('stones', {
     type: 'geojson',
     data: { type: 'FeatureCollection', features: allFeatures }
@@ -135,8 +133,11 @@ map.on('load', async () => {
     }
   });
 
+  // Pārliek countries zem punktiem, ja vajag
+  tryMoveCountriesBelowStones();
+
   populateFilters();
-  applyFilters(); // šis uzliks arī valstu iekrāsojumu
+  applyFilters();
 });
 
 map.on('click', 'stones-layer', (e) => {
@@ -148,13 +149,9 @@ map.on('click', 'stones-layer', (e) => {
 map.on('mouseenter', 'stones-layer', () => { map.getCanvas().style.cursor = 'pointer'; });
 map.on('mouseleave', 'stones-layer', () => { map.getCanvas().style.cursor = ''; });
 
-// Meklēšana uzreiz filtrē (sidebar)
 els.search.addEventListener('input', () => applyFilters());
-
-// Modal filtriem (kontinents -> valsts)
 els.continent.addEventListener('change', () => onContinentChange());
 
-// Pielietot / reset
 els.applyFiltersBtn.addEventListener('click', () => {
   applyFilters();
   closeModal();
@@ -226,7 +223,6 @@ function normalizePhotoUrl(url) {
   return u;
 }
 
-// Reģistrs: country + continent + iso_a2
 function buildRegistryMaps(pairs) {
   countryToContinent = new Map();
   continentToCountries = new Map();
@@ -239,9 +235,7 @@ function buildRegistryMaps(pairs) {
     const continent = String(item.continent || '').trim();
     const isoA2 = String(item.iso_a2 || '').trim().toUpperCase();
 
-    if (country && isoA2) {
-      countryToIsoA2.set(country, isoA2);
-    }
+    if (country && isoA2) countryToIsoA2.set(country, isoA2);
 
     if (!country || !continent) return;
 
@@ -386,8 +380,6 @@ function applyFilters() {
   });
 
   renderObjectsList();
-
-  // valstu iekrāsojums pēc filtrētajiem akmeņiem
   updateActiveCountries();
 }
 
@@ -414,27 +406,50 @@ function computeContinentStats() {
   });
 }
 
-// Valstu poligoni + slāņi
+// atrod ISO A2 lauku dažādos variantos
+function getIsoA2FromProperties(props) {
+  if (!props) return '';
+  const candidates = [
+    'ISO_A2',
+    'iso_a2',
+    'iso2',
+    'ISO2',
+    'country_code',
+    'COUNTRY_CODE',
+    'ADM0_A3', // nav A2, bet atstāsim debugam
+    'ISO_A3'   // nav A2, bet atstāsim debugam
+  ];
+
+  for (const k of candidates) {
+    if (props[k]) {
+      return String(props[k]).trim().toUpperCase();
+    }
+  }
+  return '';
+}
+
 async function addCountriesLayer() {
   const res = await fetch(COUNTRIES_GEOJSON_URL, { cache: 'force-cache' }).catch(() => null);
   if (!res || !res.ok) {
-    console.warn('Neizdevās ielādēt valstu poligonus:', COUNTRIES_GEOJSON_URL);
+    console.warn('[Countries] failed to load:', COUNTRIES_GEOJSON_URL);
     return;
   }
 
   const countriesGeojson = await res.json();
 
-  // Nodrošina feature.id = ISO_A2 (vajag setFeatureState)
   countriesFeatureIds = new Set();
+
   if (countriesGeojson && Array.isArray(countriesGeojson.features)) {
     countriesGeojson.features.forEach(ft => {
-      const iso = ft && ft.properties && String(ft.properties.ISO_A2 || '').trim().toUpperCase();
-      if (iso) {
+      const iso = getIsoA2FromProperties(ft.properties);
+      if (iso && iso.length === 2) {
         ft.id = iso;
         countriesFeatureIds.add(iso);
       }
     });
   }
+
+  console.log('[Countries] features:', (countriesGeojson.features || []).length, 'with ISO_A2 ids:', countriesFeatureIds.size);
 
   if (map.getSource('countries')) return;
 
@@ -443,7 +458,6 @@ async function addCountriesLayer() {
     data: countriesGeojson
   });
 
-  // Fill slānis (iekrāsošana)
   map.addLayer({
     id: 'countries-fill',
     type: 'fill',
@@ -464,7 +478,6 @@ async function addCountriesLayer() {
     }
   });
 
-  // Outline slānis
   map.addLayer({
     id: 'countries-outline',
     type: 'line',
@@ -484,26 +497,19 @@ async function addCountriesLayer() {
       ]
     }
   });
-
-  // Noliec zem punktiem, ja stones-layer jau ir, citādi atstājam kā ir
-  // (mapbox ļauj pārvietot slāni pēcāk)
-  tryMoveCountriesBelowStones();
 }
 
 function tryMoveCountriesBelowStones() {
   try {
-    if (map.getLayer('stones-layer') && map.getLayer('countries-fill')) {
+    if (map.getLayer('countries-fill') && map.getLayer('stones-layer')) {
       map.moveLayer('countries-fill', 'stones-layer');
     }
-    if (map.getLayer('stones-layer') && map.getLayer('countries-outline')) {
+    if (map.getLayer('countries-outline') && map.getLayer('stones-layer')) {
       map.moveLayer('countries-outline', 'stones-layer');
     }
-  } catch (e) {
-    // ignorējam
-  }
+  } catch (e) {}
 }
 
-// Uzliek feature-state active valstīm (pēc filteredFeatures)
 function updateActiveCountries() {
   if (!map.getSource('countries')) return;
 
@@ -512,20 +518,33 @@ function updateActiveCountries() {
 
   const isoCounts = new Map();
 
+  let missingIsoInRegistry = 0;
+  let missingIsoInPolygons = 0;
+
   filteredFeatures.forEach(f => {
     const p = f.properties || {};
     const countryLv = String(p.country || '').trim();
+    if (!countryLv) return;
+
     const iso = countryToIsoA2.get(countryLv);
-    if (!iso) return;
+    if (!iso) {
+      missingIsoInRegistry++;
+      return;
+    }
 
     const isoUp = String(iso).toUpperCase();
-    if (!countriesFeatureIds.has(isoUp)) return; // poligonu failā nav šādas valsts
+
+    if (!countriesFeatureIds.has(isoUp)) {
+      missingIsoInPolygons++;
+      return;
+    }
 
     isoCounts.set(isoUp, (isoCounts.get(isoUp) || 0) + 1);
     activeIsoSet.add(isoUp);
   });
 
-  // noņem tiem, kas vairs nav aktīvi
+  console.log('[Countries] active ISO after filter:', activeIsoSet.size, 'missing in registry:', missingIsoInRegistry, 'missing in polygons:', missingIsoInPolygons);
+
   prev.forEach(iso => {
     if (!activeIsoSet.has(iso)) {
       try {
@@ -534,7 +553,6 @@ function updateActiveCountries() {
     }
   });
 
-  // uzliek aktīvajiem
   activeIsoSet.forEach(iso => {
     try {
       map.setFeatureState(
@@ -597,14 +615,11 @@ function renderObjectsList() {
     item.appendChild(main);
 
     item.addEventListener('click', () => {
-      const found = filteredFeatures.find(x => x.__uid === f.__uid) || allFeatures.find(x => x.__uid === f.__uid);
-      if (!found) return;
-
-      const coords = found.geometry.coordinates;
+      const coords = f.geometry.coordinates;
       map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 7), speed: 1.2 });
 
       setTimeout(() => {
-        openFeaturePopup(found, coords);
+        openFeaturePopup(f, coords);
       }, 250);
     });
 
@@ -714,7 +729,6 @@ function setupSlideshow(rootId, photos) {
       if (counter) counter.classList.toggle('slide-hidden', photos.length <= 1);
     };
 
-    // swipe uz mob
     let startX = 0;
     let startY = 0;
 
@@ -740,25 +754,6 @@ function setupSlideshow(rootId, photos) {
 
     root.addEventListener('touchstart', onTouchStart, { passive: true });
     root.addEventListener('touchend', onTouchEnd, { passive: true });
-
-    // arrows uz desktop
-    const onKey = (ev) => {
-      if (ev.key === 'ArrowLeft') { i = (i - 1 + photos.length) % photos.length; update(); }
-      if (ev.key === 'ArrowRight') { i = (i + 1) % photos.length; update(); }
-    };
-
-    document.addEventListener('keydown', onKey, { passive: true });
-
-    const popupEl = root.closest('.mapboxgl-popup');
-    if (popupEl) {
-      const obs = new MutationObserver(() => {
-        if (!document.body.contains(popupEl)) {
-          document.removeEventListener('keydown', onKey);
-          obs.disconnect();
-        }
-      });
-      obs.observe(document.body, { childList: true, subtree: true });
-    }
 
     update();
   }, 0);
