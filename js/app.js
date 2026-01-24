@@ -5,8 +5,10 @@ if (!cfg.MAPBOX_TOKEN || !cfg.DATA_URL) {
 }
 
 mapboxgl.accessToken = cfg.MAPBOX_TOKEN;
+
 const DATA_URL = cfg.DATA_URL;
 const REGISTRY_URL = '/data/country_continent_lv.json';
+
 const UNKNOWN_CONTINENT_VALUE = '__UNKNOWN__';
 const UNKNOWN_CONTINENT_LABEL = 'Nezināms kontinents';
 
@@ -21,9 +23,23 @@ let continentToCountries = new Map();
 let continentCounts = new Map();
 let unknownCountries = new Set();
 
-const elSidebar = document.getElementById('sidebar');
-const elFiltersToggle = document.getElementById('filters-toggle');
-const elFiltersPanel = document.getElementById('filters-panel');
+const els = {
+  totalCount: document.getElementById('total-count'),
+  objectsList: document.getElementById('objects-list'),
+  search: document.getElementById('filter-search'),
+
+  modal: document.getElementById('filtersModal'),
+  backdrop: document.getElementById('filtersBackdrop'),
+  openFilters: document.getElementById('openFilters'),
+  closeFilters: document.getElementById('closeFilters'),
+  resetFilters: document.getElementById('resetFilters'),
+  applyFiltersBtn: document.getElementById('applyFiltersBtn'),
+
+  author: document.getElementById('filter-author'),
+  year: document.getElementById('filter-year'),
+  continent: document.getElementById('filter-continent'),
+  country: document.getElementById('filter-country')
+};
 
 const map = new mapboxgl.Map({
   container: 'map',
@@ -33,22 +49,25 @@ const map = new mapboxgl.Map({
 });
 
 map.on('load', async () => {
-  initMobileFilters();
+  initModal();
 
   const [registryRes, dataRes] = await Promise.all([
-    fetch(REGISTRY_URL, { cache: 'force-cache' }),
-    fetch(DATA_URL)
+    fetch(REGISTRY_URL, { cache: 'force-cache' }).catch(() => null),
+    fetch(DATA_URL).catch(() => null)
   ]);
 
-  if (registryRes.ok) {
+  if (registryRes && registryRes.ok) {
     try {
       registryPairs = await registryRes.json();
       buildRegistryMaps(registryPairs);
     } catch (e) {
       console.warn('Reģistra JSON nav nolasāms:', e);
     }
-  } else {
-    console.warn('Neizdevās ielādēt reģistru:', REGISTRY_URL, registryRes.status);
+  }
+
+  if (!dataRes || !dataRes.ok) {
+    alert('Neizdevās ielādēt datus (GeoJSON).');
+    return;
   }
 
   const geojson = await dataRes.json();
@@ -56,16 +75,20 @@ map.on('load', async () => {
   allFeatures = (geojson.features || []).map((f, i) => {
     if (!f.properties) f.properties = {};
 
-    const uidBase =
-      (f.properties && (f.properties.id || f.properties.title))
-        ? String(f.properties.id || f.properties.title)
-        : `row_${i}`;
+    const uidBase = (f.properties.id || f.properties.title) ? String(f.properties.id || f.properties.title) : `row_${i}`;
     f.__uid = `${uidBase}__${i}`;
 
     f.properties.missing_info = normalizeBoolean(f.properties.missing_info);
 
     if (typeof f.properties.country === 'string') {
       f.properties.country = f.properties.country.trim();
+    }
+
+    // normalizē foto URL (biežākais iemesls "uz mob nerādās attēli" ir mixed content ar http)
+    if (typeof f.properties.photos === 'string') {
+      f.properties.photos = normalizePhotoField(f.properties.photos);
+    } else if (Array.isArray(f.properties.photos)) {
+      f.properties.photos = f.properties.photos.map(normalizePhotoUrl);
     }
 
     return f;
@@ -109,68 +132,65 @@ map.on('click', 'stones-layer', (e) => {
 map.on('mouseenter', 'stones-layer', () => { map.getCanvas().style.cursor = 'pointer'; });
 map.on('mouseleave', 'stones-layer', () => { map.getCanvas().style.cursor = ''; });
 
-document.getElementById('filter-author').addEventListener('change', () => {
-  applyFilters();
-  collapseMobileFiltersAfterChange();
-});
+els.search.addEventListener('input', () => applyFilters());
 
-document.getElementById('filter-year').addEventListener('change', () => {
-  applyFilters();
-  collapseMobileFiltersAfterChange();
-});
-
-document.getElementById('filter-continent').addEventListener('change', () => {
+els.continent.addEventListener('change', () => {
   onContinentChange();
-  collapseMobileFiltersAfterChange();
 });
 
-document.getElementById('filter-country').addEventListener('change', () => {
+els.country.addEventListener('change', () => {
+  // country ir atkarīgs no continent, bet te vienkārši pārfiltrējam
+});
+
+els.applyFiltersBtn.addEventListener('click', () => {
   applyFilters();
-  collapseMobileFiltersAfterChange();
+  closeModal();
 });
 
-function initMobileFilters() {
-  if (!elFiltersToggle) return;
+els.resetFilters.addEventListener('click', () => {
+  resetAllFilters();
+  applyFilters();
+  closeModal();
+});
 
-  const isMobile = window.matchMedia('(max-width: 720px)').matches;
-  if (isMobile) {
-    elSidebar.classList.add('filters-collapsed-mobile');
-    elFiltersToggle.setAttribute('aria-expanded', 'false');
-  }
+els.author.addEventListener('change', () => {});
+els.year.addEventListener('change', () => {});
 
-  elFiltersToggle.addEventListener('click', () => {
-    const collapsed = elSidebar.classList.toggle('filters-collapsed-mobile');
-    elFiltersToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-  });
+function initModal() {
+  els.openFilters.addEventListener('click', () => openModal());
+  els.closeFilters.addEventListener('click', () => closeModal());
+  els.backdrop.addEventListener('click', () => closeModal());
 
-  window.addEventListener('resize', () => {
-    const mobileNow = window.matchMedia('(max-width: 720px)').matches;
-    if (!mobileNow) {
-      elSidebar.classList.remove('filters-collapsed-mobile');
-      elFiltersToggle.setAttribute('aria-expanded', 'true');
-    } else {
-      if (!elSidebar.classList.contains('filters-collapsed-mobile')) {
-        elFiltersToggle.setAttribute('aria-expanded', 'true');
-      } else {
-        elFiltersToggle.setAttribute('aria-expanded', 'false');
-      }
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape' && els.modal.classList.contains('is-open')) {
+      closeModal();
     }
-  }, { passive: true });
+  });
 }
 
-function collapseMobileFiltersAfterChange() {
-  const isMobile = window.matchMedia('(max-width: 720px)').matches;
-  if (!isMobile) return;
+function openModal() {
+  els.modal.classList.add('is-open');
+  els.modal.setAttribute('aria-hidden', 'false');
+}
 
-  elSidebar.classList.add('filters-collapsed-mobile');
-  if (elFiltersToggle) elFiltersToggle.setAttribute('aria-expanded', 'false');
+function closeModal() {
+  els.modal.classList.remove('is-open');
+  els.modal.setAttribute('aria-hidden', 'true');
+}
+
+function resetAllFilters() {
+  els.author.value = '';
+  els.year.value = '';
+  els.continent.value = '';
+  populateCountryFilter('');
+  els.country.value = '';
+  els.search.value = '';
 }
 
 function onContinentChange() {
-  const continent = document.getElementById('filter-continent').value;
+  const continent = els.continent.value;
   populateCountryFilter(continent);
-  document.getElementById('filter-country').value = '';
-  applyFilters();
+  els.country.value = '';
 }
 
 function normalizeBoolean(v) {
@@ -212,22 +232,20 @@ function populateFilters() {
     if (p.date && String(p.date).length >= 4) years.add(String(p.date).substring(0, 4));
   });
 
-  const authorSelect = document.getElementById('filter-author');
-  authorSelect.innerHTML = '<option value="">Visi</option>';
+  els.author.innerHTML = '<option value="">Visi</option>';
   [...authors].sort((a, b) => String(a).localeCompare(String(b), 'lv')).forEach(a => {
     const o = document.createElement('option');
     o.value = a;
     o.textContent = a;
-    authorSelect.appendChild(o);
+    els.author.appendChild(o);
   });
 
-  const yearSelect = document.getElementById('filter-year');
-  yearSelect.innerHTML = '<option value="">Visi</option>';
+  els.year.innerHTML = '<option value="">Visi</option>';
   [...years].sort().forEach(y => {
     const o = document.createElement('option');
     o.value = y;
     o.textContent = y;
-    yearSelect.appendChild(o);
+    els.year.appendChild(o);
   });
 
   populateContinentFilter();
@@ -235,8 +253,7 @@ function populateFilters() {
 }
 
 function populateContinentFilter() {
-  const continentSelect = document.getElementById('filter-continent');
-  continentSelect.innerHTML = '<option value="">Visi</option>';
+  els.continent.innerHTML = '<option value="">Visi</option>';
 
   let continents = [];
   if (continentToCountries && continentToCountries.size) {
@@ -252,7 +269,7 @@ function populateContinentFilter() {
       const o = document.createElement('option');
       o.value = cont;
       o.textContent = `${cont} (${count})`;
-      continentSelect.appendChild(o);
+      els.continent.appendChild(o);
     });
 
   const unknownCount = Number(continentCounts.get(UNKNOWN_CONTINENT_LABEL) || 0);
@@ -260,13 +277,12 @@ function populateContinentFilter() {
     const o = document.createElement('option');
     o.value = UNKNOWN_CONTINENT_VALUE;
     o.textContent = `${UNKNOWN_CONTINENT_LABEL} (${unknownCount})`;
-    continentSelect.appendChild(o);
+    els.continent.appendChild(o);
   }
 }
 
 function populateCountryFilter(continent) {
-  const countrySelect = document.getElementById('filter-country');
-  countrySelect.innerHTML = '<option value="">Visas</option>';
+  els.country.innerHTML = '<option value="">Visas</option>';
 
   let countries = [];
 
@@ -291,18 +307,18 @@ function populateCountryFilter(continent) {
       const o = document.createElement('option');
       o.value = c;
       o.textContent = c;
-      countrySelect.appendChild(o);
+      els.country.appendChild(o);
     });
 }
 
 function applyFilters() {
   if (!map.getSource('stones')) return;
 
-  const author = document.getElementById('filter-author').value;
-  const year = document.getElementById('filter-year').value;
-
-  const continent = document.getElementById('filter-continent').value;
-  const country = document.getElementById('filter-country').value;
+  const author = els.author.value;
+  const year = els.year.value;
+  const continent = els.continent.value;
+  const country = els.country.value;
+  const q = String(els.search.value || '').trim().toLowerCase();
 
   filteredFeatures = allFeatures.filter(f => {
     const p = f.properties || {};
@@ -324,6 +340,11 @@ function applyFilters() {
       }
     }
 
+    if (q) {
+      const hay = `${p.title || ''} ${p.author || ''} ${p.description || ''} ${p.country || ''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+
     return true;
   });
 
@@ -336,9 +357,8 @@ function applyFilters() {
 }
 
 function updateTotalCountBadge(n) {
-  const el = document.getElementById('total-count');
-  if (!el) return;
-  el.textContent = String(Number(n) || 0);
+  if (!els.totalCount) return;
+  els.totalCount.textContent = String(Number(n) || 0);
 }
 
 function computeContinentStats() {
@@ -360,7 +380,7 @@ function computeContinentStats() {
 }
 
 function renderObjectsList() {
-  const box = document.getElementById('objects-list');
+  const box = els.objectsList;
   box.innerHTML = '';
 
   if (!filteredFeatures.length) {
@@ -420,8 +440,6 @@ function renderObjectsList() {
       setTimeout(() => {
         openFeaturePopup(found, coords);
       }, 250);
-
-      collapseMobileFiltersAfterChange();
     });
 
     box.appendChild(item);
@@ -429,9 +447,8 @@ function renderObjectsList() {
 }
 
 function openFeaturePopup(feature, lngLat) {
-  const f = feature;
-  const p = f.properties || {};
-  const photos = getPhotos(p);
+  const p = feature.properties || {};
+  const photos = getPhotos(p).map(normalizePhotoUrl);
   const missing = normalizeBoolean(p.missing_info);
 
   const dateText = formatDateDDMMMYYYY(p.date);
@@ -447,19 +464,13 @@ function openFeaturePopup(feature, lngLat) {
   if (photos.length) {
     slideshowHtml = `
       <div class="slideshow" id="${popupId}">
-        <img src="${escapeAttr(photos[0])}" loading="lazy" referrerpolicy="no-referrer" />
-        <button class="slide-btn slide-prev" type="button" aria-label="Iepriekšējā bilde">
-          ${iconChevronLeft()}
-        </button>
-        <button class="slide-btn slide-next" type="button" aria-label="Nākamā bilde">
-          ${iconChevronRight()}
-        </button>
+        <img src="${escapeAttr(photos[0])}" loading="lazy" />
         <div class="slide-counter">1 / ${photos.length}</div>
       </div>
     `;
   }
 
-  let html = `
+  const html = `
     <div class="popup-wrap">
       <div class="popup-title">
         <span>${titleText}</span>
@@ -502,6 +513,26 @@ function getDisplayTitle(p) {
   return 'Bez nosaukuma';
 }
 
+function normalizePhotoField(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return s;
+
+  // saglabā oriģinālo separatoru loģiku, tikai normalizē URL protokolu
+  const parts = s.split(/\r?\n|\||,/g).map(x => x.trim()).filter(Boolean);
+  return parts.map(normalizePhotoUrl).join('|');
+}
+
+function normalizePhotoUrl(url) {
+  const u = String(url || '').trim();
+  if (!u) return '';
+
+  // mixed content fix: ja lapa ir https un bilde ir http, mobilie pārlūki bieži bloķē
+  if (u.startsWith('http://')) return 'https://' + u.slice('http://'.length);
+
+  // Google drive thumbnails / googleusercontent parasti jau ir https, bet atstājam kā ir
+  return u;
+}
+
 function getPhotos(props) {
   const v = props.photos;
   if (Array.isArray(v)) return v.filter(Boolean);
@@ -526,8 +557,6 @@ function setupSlideshow(rootId, photos) {
     if (!root) return;
 
     const img = root.querySelector('img');
-    const btnPrev = root.querySelector('.slide-prev');
-    const btnNext = root.querySelector('.slide-next');
     const counter = root.querySelector('.slide-counter');
 
     let i = 0;
@@ -536,23 +565,43 @@ function setupSlideshow(rootId, photos) {
       if (!img) return;
       img.src = photos[i];
       if (counter) counter.textContent = `${i + 1} / ${photos.length}`;
-
-      const hideNav = photos.length <= 1;
-      if (btnPrev) btnPrev.classList.toggle('slide-hidden', hideNav);
-      if (btnNext) btnNext.classList.toggle('slide-hidden', hideNav);
-      if (counter) counter.classList.toggle('slide-hidden', hideNav);
+      counter && counter.classList.toggle('slide-hidden', photos.length <= 1);
     };
 
-    const prev = () => { i = (i - 1 + photos.length) % photos.length; update(); };
-    const next = () => { i = (i + 1) % photos.length; update(); };
+    // swipe on mobile
+    let startX = 0;
+    let startY = 0;
 
-    if (btnPrev) btnPrev.addEventListener('click', (ev) => { ev.stopPropagation(); prev(); });
-    if (btnNext) btnNext.addEventListener('click', (ev) => { ev.stopPropagation(); next(); });
+    const onTouchStart = (ev) => {
+      const t = ev.touches && ev.touches[0];
+      if (!t) return;
+      startX = t.clientX;
+      startY = t.clientY;
+    };
 
+    const onTouchEnd = (ev) => {
+      const t = ev.changedTouches && ev.changedTouches[0];
+      if (!t) return;
+
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+
+      // ignorē vertikālu scroll
+      if (Math.abs(dy) > Math.abs(dx)) return;
+
+      if (dx < -30) { i = (i + 1) % photos.length; update(); }
+      if (dx > 30) { i = (i - 1 + photos.length) % photos.length; update(); }
+    };
+
+    root.addEventListener('touchstart', onTouchStart, { passive: true });
+    root.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    // arrows on desktop
     const onKey = (ev) => {
-      if (ev.key === 'ArrowLeft') prev();
-      if (ev.key === 'ArrowRight') next();
+      if (ev.key === 'ArrowLeft') { i = (i - 1 + photos.length) % photos.length; update(); }
+      if (ev.key === 'ArrowRight') { i = (i + 1) % photos.length; update(); }
     };
+
     document.addEventListener('keydown', onKey, { passive: true });
 
     const popupEl = root.closest('.mapboxgl-popup');
@@ -584,14 +633,6 @@ function formatDateDDMMMYYYY(s) {
   const mon = months[mm - 1] || String(mm).padStart(2, '0');
 
   return `${String(dd).padStart(2, '0')}.${mon}.${yyyy}`;
-}
-
-function iconChevronLeft() {
-  return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-}
-
-function iconChevronRight() {
-  return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 function escapeHtml(s) {
