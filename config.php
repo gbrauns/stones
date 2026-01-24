@@ -7,20 +7,23 @@ if (!file_exists($envPath)) {
   exit;
 }
 
-$lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+$lines = file($envPath, FILE_IGNORE_NEW_LINES);
 $cfg = [];
 
 foreach ($lines as $line) {
   $line = trim($line);
-  if ($line === '' || str_starts_with($line, '#')) continue;
+  if ($line === '' || substr($line, 0, 1) === '#') continue;
+
   $pos = strpos($line, '=');
   if ($pos === false) continue;
 
   $key = trim(substr($line, 0, $pos));
   $val = trim(substr($line, $pos + 1));
 
-  // Noņem pēdiņas, ja ieliktas
-  $val = trim($val, "\"'");
+  // noņem pēdiņas, ja ieliktas
+  if ((substr($val, 0, 1) === '"' && substr($val, -1) === '"') || (substr($val, 0, 1) === "'" && substr($val, -1) === "'")) {
+    $val = substr($val, 1, -1);
+  }
 
   $cfg[$key] = $val;
 }
