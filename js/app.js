@@ -23,8 +23,11 @@ map.on('load', async () => {
   const geojson = await res.json();
 
   allFeatures = (geojson.features || []).map((f, i) => {
-    const uid = (f.properties && (f.properties.id || f.properties.title)) ? String(f.properties.id || f.properties.title) : `row_${i}`;
-    f.__uid = `${uid}__${i}`;
+    const uidBase =
+      (f.properties && (f.properties.id || f.properties.title))
+        ? String(f.properties.id || f.properties.title)
+        : `row_${i}`;
+    f.__uid = `${uidBase}__${i}`;
     return f;
   });
 
@@ -109,7 +112,7 @@ function applyFilters() {
     if (missingOnly && !missing) return false;
 
     if (q) {
-      const hay = `${p.title || ''} ${p.author || ''} ${p.description || ''}`.toLowerCase();
+      const hay = `${p.title || ''} ${p.author || ''} ${p.description || ''} ${p.country || ''}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
 
@@ -144,11 +147,11 @@ function renderObjectsList() {
     return ta.localeCompare(tb);
   });
 
-  sorted.forEach((f, idx) => {
+  sorted.forEach((f) => {
     const p = f.properties || {};
     const missing = (p.missing_info === true || p.missing_info === 'true');
 
-    const title = getDisplayTitle(p);
+    const title = getTitleWithCountry(p); // <-- te mainījām
     const sub = `${p.author || ''} · ${formatDateDDMMMYYYY(p.date)}`.trim();
 
     const item = document.createElement('div');
@@ -198,7 +201,7 @@ function openFeaturePopup(feature, lngLat) {
   const missing = (p.missing_info === true || p.missing_info === 'true');
 
   const dateText = formatDateDDMMMYYYY(p.date);
-  const titleText = p.title ? escapeHtml(p.title) : (p.id ? escapeHtml(p.id) : 'Bez nosaukuma');
+  const titleText = escapeHtml(getTitleWithCountry(p)); // <-- te mainījām
 
   const badge = missing
     ? `<span class="badge-missing">⚠️ missing info</span>`
@@ -249,6 +252,12 @@ function openFeaturePopup(feature, lngLat) {
   if (photos.length) {
     setupSlideshow(popupId, photos);
   }
+}
+
+function getTitleWithCountry(p) {
+  const base = getDisplayTitle(p);
+  const country = String(p.country || '').trim();
+  return country ? `${base} (${country})` : base;
 }
 
 function getDisplayTitle(p) {
