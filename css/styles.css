@@ -24,9 +24,19 @@ html, body {
   gap: 10px;
 }
 
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 #sidebar h1 {
   font-size: 18px;
-  margin: 0 0 6px 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .count-badge {
@@ -41,7 +51,23 @@ html, body {
   background: #f6f6f6;
   font-size: 12px;
   font-weight: 700;
-  margin-right: 8px;
+}
+
+.filters-toggle {
+  display: none;
+  border: 1px solid #ddd;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.filters-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 6px;
 }
 
 #sidebar label {
@@ -61,17 +87,6 @@ html, body {
 
 #sidebar input:focus, #sidebar select:focus {
   border-color: #999;
-}
-
-.checkbox {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.checkbox input {
-  width: auto !important;
-  margin-top: 0 !important;
 }
 
 #list-title {
@@ -230,11 +245,31 @@ html, body {
 
 @media (max-width: 720px) {
   #app { flex-direction: column; }
+
   #sidebar {
     width: 100%;
     height: 48vh;
     border-right: none;
     border-bottom: 1px solid #ddd;
   }
+
   #map { height: 52vh; }
+
+  .filters-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .filters-panel {
+    overflow: hidden;
+    transition: max-height 180ms ease;
+    max-height: 420px;
+  }
+
+  #sidebar.filters-collapsed-mobile .filters-panel {
+    max-height: 0;
+    padding-top: 0;
+  }
 }

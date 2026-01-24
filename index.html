@@ -8,54 +8,54 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=6" />
+  <link rel="stylesheet" href="css/styles.css?v=7" />
 </head>
 <body>
 
 <div id="app">
-  <aside id="sidebar">
-    <h1><span id="total-count" class="count-badge">0</span> Akmeņu karte</h1>
+  <aside id="sidebar" class="filters-collapsed-mobile">
+    <div class="sidebar-top">
+      <h1>
+        <span id="total-count" class="count-badge">0</span>
+        Akmeņu karte
+      </h1>
 
-    <label>
-      Autors
-      <select id="filter-author">
-        <option value="">Visi</option>
-      </select>
-    </label>
+      <button id="filters-toggle" class="filters-toggle" type="button" aria-expanded="false" aria-controls="filters-panel">
+        Filtri
+      </button>
+    </div>
 
-    <label>
-      Gads
-      <select id="filter-year">
-        <option value="">Visi</option>
-      </select>
-    </label>
+    <div id="filters-panel" class="filters-panel">
+      <label>
+        Autors
+        <select id="filter-author">
+          <option value="">Visi</option>
+        </select>
+      </label>
 
-    <label>
-      Kontinents
-      <select id="filter-continent">
-        <option value="">Visi</option>
-      </select>
-    </label>
+      <label>
+        Gads
+        <select id="filter-year">
+          <option value="">Visi</option>
+        </select>
+      </label>
 
-    <label>
-      Valsts
-      <select id="filter-country">
-        <option value="">Visas</option>
-      </select>
-    </label>
+      <label>
+        Kontinents
+        <select id="filter-continent">
+          <option value="">Visi</option>
+        </select>
+      </label>
 
-    <label class="checkbox">
-      <input type="checkbox" id="filter-missing" />
-      Tikai ar missing info
-    </label>
+      <label>
+        Valsts
+        <select id="filter-country">
+          <option value="">Visas</option>
+        </select>
+      </label>
+    </div>
 
     <div id="list-title">Objekti</div>
-
-    <label>
-      Meklēt
-      <input id="filter-search" type="text" placeholder="Nosaukums / autors" />
-    </label>
-
     <div id="objects-list"></div>
   </aside>
 
@@ -72,7 +72,7 @@
   </a>
 </footer>
 
-<script src="config.php?v=5"></script>
+<script src="config.php?v=4"></script>
 <script src="js/app.js?v=7"></script>
 </body>
 </html>
