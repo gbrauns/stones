@@ -8,24 +8,47 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=6" />
+  <link rel="stylesheet" href="css/styles.css?v=7" />
 </head>
 <body>
 
 <div id="app">
-  <aside id="sidebar" class="filters-collapsed-mobile">
-    <div class="sidebar-top">
-      <h1>
-        <span id="total-count" class="count-badge">0</span>
-        Akmeņu karte
-      </h1>
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title-row">
+        <h1 class="sidebar-title">
+          <span id="total-count" class="count-badge">0</span>
+          Akmeņu karte
+        </h1>
 
-      <button id="filters-toggle" class="filters-toggle" type="button" aria-expanded="false" aria-controls="filters-panel">
-        Filtri
-      </button>
+        <button id="openFilters" class="filters-open-btn" type="button" aria-haspopup="dialog" aria-controls="filtersModal">
+          Filtri
+        </button>
+      </div>
+
+      <label class="search-row">
+        <span class="sr-only">Meklēt</span>
+        <input id="filter-search" type="text" placeholder="Meklēt (nosaukums, autors, valsts)..." />
+      </label>
     </div>
 
-    <div id="filters-panel" class="filters-panel">
+    <div id="list-title">Objekti</div>
+    <div id="objects-list"></div>
+  </aside>
+
+  <div id="map"></div>
+</div>
+
+<div id="filtersModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div id="filtersBackdrop" class="modal-backdrop"></div>
+
+  <div class="modal-sheet" role="document">
+    <div class="modal-top">
+      <div class="modal-title">Filtri</div>
+      <button id="closeFilters" class="modal-close-btn" type="button" aria-label="Aizvērt filtrus">✕</button>
+    </div>
+
+    <div class="modal-body">
       <label>
         Autors
         <select id="filter-author">
@@ -55,24 +78,18 @@
       </label>
     </div>
 
-    <div id="list-title">Objekti</div>
-    <div id="objects-list"></div>
-  </aside>
-
-  <div id="map"></div>
+    <div class="modal-actions">
+      <button id="resetFilters" class="btn-secondary" type="button">Notīrīt</button>
+      <button id="applyFiltersBtn" class="btn-primary" type="button">Pielietot</button>
+    </div>
+  </div>
 </div>
 
 <footer id="footer">
-  <a
-    href="https://forms.gle/JcUwCwtvCwwk2Yxr7"
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    ➕ Forma
-  </a>
+  <a href="https://forms.gle/JcUwCwtvCwwk2Yxr7" target="_blank" rel="noopener noreferrer">➕ Forma</a>
 </footer>
 
 <script src="config.php?v=3"></script>
-<script src="js/app.js?v=6"></script>
+<script src="js/app.js?v=7"></script>
 </body>
 </html>
