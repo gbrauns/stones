@@ -99,7 +99,7 @@
   { "country": "Latvija", "continent": "Eiropa" },
   { "country": "Lietuva", "continent": "Eiropa" },
   { "country": "Luksemburga", "continent": "Eiropa" },
-
+  { "country": "Sīrija", "continent": "Āzija" },
   { "country": "Meksika", "continent": "Ziemeļamerika" },
   { "country": "Moldova", "continent": "Eiropa" },
   { "country": "Malta", "continent": "Eiropa" },
@@ -117,7 +117,7 @@
   { "country": "Spānija", "continent": "Eiropa" },
   { "country": "Zviedrija", "continent": "Eiropa" },
   { "country": "Saudu Arābija", "continent": "Āzija" },
-
+  { "country": "Puerto Rico", "continent": "Dienvidamerika" },
   { "country": "Šveice", "continent": "Eiropa" },
 
   { "country": "Turcija", "continent": "Āzija" },

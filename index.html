@@ -8,13 +8,13 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=4" />
+  <link rel="stylesheet" href="css/styles.css?v=6" />
 </head>
 <body>
 
 <div id="app">
   <aside id="sidebar">
-    <h1>Akmeņu karte</h1>
+    <h1><span id="total-count" class="count-badge">0</span> Akmeņu karte</h1>
 
     <label>
       Autors
@@ -44,7 +44,6 @@
       </select>
     </label>
 
-
     <label class="checkbox">
       <input type="checkbox" id="filter-missing" />
       Tikai ar missing info
@@ -73,7 +72,7 @@
   </a>
 </footer>
 
-<script src="config.php?v=3"></script>
-<script src="js/app.js?v=4"></script>
+<script src="config.php?v=4"></script>
+<script src="js/app.js?v=6"></script>
 </body>
 </html>

@@ -7,6 +7,8 @@ if (!cfg.MAPBOX_TOKEN || !cfg.DATA_URL) {
 mapboxgl.accessToken = cfg.MAPBOX_TOKEN;
 const DATA_URL = cfg.DATA_URL;
 const REGISTRY_URL = '/data/country_continent_lv.json';
+const UNKNOWN_CONTINENT_VALUE = '__UNKNOWN__';
+const UNKNOWN_CONTINENT_LABEL = 'Nezināms kontinents';
 
 let allFeatures = [];
 let filteredFeatures = [];
@@ -16,6 +18,10 @@ let activePopup = null;
 let registryPairs = [];
 let countryToContinent = new Map();      // country -> continent
 let continentToCountries = new Map();    // continent -> Set(countries)
+
+// Stats based on current dataset (stones)
+let continentCounts = new Map();         // continent label -> count
+let unknownCountries = new Set();        // countries that are not in registry mapping (or empty)
 
 const map = new mapboxgl.Map({
   container: 'map',
@@ -64,7 +70,16 @@ map.on('load', async () => {
     return f;
   });
 
-  map.addSource('stones', { type: 'geojson', data: { type: 'FeatureCollection', features: allFeatures } });
+  // 2) Kopējais akmeņu skaits pie "Akmeņu karte"
+  updateTotalCountBadge(allFeatures.length);
+
+  // 3) Kontinentu skaiti pie filtra opcijām + 1) Nezināms kontinents
+  computeContinentStats();
+
+  map.addSource('stones', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: allFeatures }
+  });
 
   map.addLayer({
     id: 'stones-layer',
@@ -101,13 +116,14 @@ document.getElementById('filter-year').addEventListener('change', applyFilters);
 document.getElementById('filter-missing').addEventListener('change', applyFilters);
 document.getElementById('filter-search').addEventListener('input', applyFilters);
 
-// New: continent + country filters
+// Continent + country filters
 document.getElementById('filter-continent').addEventListener('change', onContinentChange);
 document.getElementById('filter-country').addEventListener('change', applyFilters);
 
 function onContinentChange() {
-  // main rule: mainot kontinentu, valsts tiek resetota un pārbūvēts valstu saraksts
   const continent = document.getElementById('filter-continent').value;
+
+  // Main rule: mainot kontinentu, valsts tiek resetota un pārbūvēts valstu saraksts
   populateCountryFilter(continent);
   document.getElementById('filter-country').value = '';
   applyFilters();
@@ -170,7 +186,6 @@ function populateFilters() {
     yearSelect.appendChild(o);
   });
 
-  // New: continents from registry (fallback: derive from features if registry not loaded)
   populateContinentFilter();
   populateCountryFilter(''); // initially all
 }
@@ -179,27 +194,33 @@ function populateContinentFilter() {
   const continentSelect = document.getElementById('filter-continent');
   continentSelect.innerHTML = '<option value="">Visi</option>';
 
+  // Continents from registry (stable) + counts from dataset
   let continents = [];
-
   if (continentToCountries && continentToCountries.size) {
     continents = [...continentToCountries.keys()];
   } else {
-    // fallback: derive from features if registry is missing
-    const tmp = new Set();
-    allFeatures.forEach(f => {
-      const c = String((f.properties && f.properties.country) || '').trim();
-      const cont = countryToContinent.get(c);
-      if (cont) tmp.add(cont);
-    });
-    continents = [...tmp];
+    // fallback: derive from dataset
+    continents = [...continentCounts.keys()].filter(k => k !== UNKNOWN_CONTINENT_LABEL);
   }
 
-  continents.sort((a, b) => String(a).localeCompare(String(b), 'lv')).forEach(cont => {
+  continents
+    .sort((a, b) => String(a).localeCompare(String(b), 'lv'))
+    .forEach(cont => {
+      const count = Number(continentCounts.get(cont) || 0);
+      const o = document.createElement('option');
+      o.value = cont;
+      o.textContent = `${cont} (${count})`;
+      continentSelect.appendChild(o);
+    });
+
+  // 1) Nezināms kontinents (tikai, ja tādi ir)
+  const unknownCount = Number(continentCounts.get(UNKNOWN_CONTINENT_LABEL) || 0);
+  if (unknownCount > 0) {
     const o = document.createElement('option');
-    o.value = cont;
-    o.textContent = cont;
+    o.value = UNKNOWN_CONTINENT_VALUE;
+    o.textContent = `${UNKNOWN_CONTINENT_LABEL} (${unknownCount})`;
     continentSelect.appendChild(o);
-  });
+  }
 }
 
 function populateCountryFilter(continent) {
@@ -208,7 +229,9 @@ function populateCountryFilter(continent) {
 
   let countries = [];
 
-  if (continent && continentToCountries && continentToCountries.has(continent)) {
+  if (continent === UNKNOWN_CONTINENT_VALUE) {
+    countries = [...unknownCountries].filter(Boolean);
+  } else if (continent && continentToCountries && continentToCountries.has(continent)) {
     countries = [...continentToCountries.get(continent)];
   } else if (countryToContinent && countryToContinent.size) {
     countries = [...countryToContinent.keys()];
@@ -222,12 +245,14 @@ function populateCountryFilter(continent) {
     countries = [...tmp];
   }
 
-  countries.sort((a, b) => String(a).localeCompare(String(b), 'lv')).forEach(c => {
-    const o = document.createElement('option');
-    o.value = c;
-    o.textContent = c;
-    countrySelect.appendChild(o);
-  });
+  countries
+    .sort((a, b) => String(a).localeCompare(String(b), 'lv'))
+    .forEach(c => {
+      const o = document.createElement('option');
+      o.value = c;
+      o.textContent = c;
+      countrySelect.appendChild(o);
+    });
 }
 
 function applyFilters() {
@@ -246,17 +271,20 @@ function applyFilters() {
 
     if (author && p.author !== author) return false;
     if (year && (!p.date || !String(p.date).startsWith(year))) return false;
-
     if (missingOnly && !normalizeBoolean(p.missing_info)) return false;
 
-    // Country/continent filtering
     const featureCountry = String(p.country || '').trim();
 
     if (country) {
       if (featureCountry !== country) return false;
     } else if (continent) {
-      const featureContinent = countryToContinent.get(featureCountry);
-      if (featureContinent !== continent) return false;
+      if (continent === UNKNOWN_CONTINENT_VALUE) {
+        const featureContinent = countryToContinent.get(featureCountry);
+        if (featureContinent) return false; // tikai tie, kam nav mapping
+      } else {
+        const featureContinent = countryToContinent.get(featureCountry);
+        if (featureContinent !== continent) return false;
+      }
     }
 
     if (q) {
@@ -273,6 +301,30 @@ function applyFilters() {
   });
 
   renderObjectsList();
+}
+
+function updateTotalCountBadge(n) {
+  const el = document.getElementById('total-count');
+  if (!el) return;
+  el.textContent = String(Number(n) || 0);
+}
+
+function computeContinentStats() {
+  continentCounts = new Map();
+  unknownCountries = new Set();
+
+  allFeatures.forEach(f => {
+    const p = f.properties || {};
+    const country = String(p.country || '').trim();
+    const cont = countryToContinent.get(country);
+
+    if (cont) {
+      continentCounts.set(cont, (continentCounts.get(cont) || 0) + 1);
+    } else {
+      continentCounts.set(UNKNOWN_CONTINENT_LABEL, (continentCounts.get(UNKNOWN_CONTINENT_LABEL) || 0) + 1);
+      if (country) unknownCountries.add(country);
+    }
+  });
 }
 
 function renderObjectsList() {
@@ -518,5 +570,5 @@ function escapeHtml(s) {
 }
 
 function escapeAttr(s) {
-  return escapeHtml(String(s)).replaceAll('\n', ' ').trim();
+  return escapeHtml(s).replaceAll('`', '&#096;');
 }
