@@ -8,6 +8,7 @@ mapboxgl.accessToken = cfg.MAPBOX_TOKEN;
 
 const DATA_URL = cfg.DATA_URL;
 const REGISTRY_URL = '/data/country_continent_lv.json';
+const COUNTRIES_GEOJSON_URL = '/data/countries_simplified.geojson';
 
 const UNKNOWN_CONTINENT_VALUE = '__UNKNOWN__';
 const UNKNOWN_CONTINENT_LABEL = 'Nezināms kontinents';
@@ -19,9 +20,14 @@ let activePopup = null;
 let registryPairs = [];
 let countryToContinent = new Map();
 let continentToCountries = new Map();
+let countryToIsoA2 = new Map(); // LV nosaukums -> ISO A2
 
 let continentCounts = new Map();
 let unknownCountries = new Set();
+
+// valstis iekrāsošanai
+let activeIsoSet = new Set(); // ISO A2, kuriem count > 0 (filtered)
+let countriesFeatureIds = new Set(); // ISO A2, kas eksistē poligonu failā (lai nesauktu setFeatureState uz neesošiem)
 
 const els = {
   totalCount: document.getElementById('total-count'),
@@ -51,6 +57,7 @@ const map = new mapboxgl.Map({
 map.on('load', async () => {
   initModal();
 
+  // Ielādē reģistru + akmeņus paralēli
   const [registryRes, dataRes] = await Promise.all([
     fetch(REGISTRY_URL, { cache: 'force-cache' }).catch(() => null),
     fetch(DATA_URL).catch(() => null)
@@ -60,9 +67,12 @@ map.on('load', async () => {
     try {
       registryPairs = await registryRes.json();
       buildRegistryMaps(registryPairs);
+      console.log('[Registry] loaded pairs:', registryPairs.length);
     } catch (e) {
       console.warn('Reģistra JSON nav nolasāms:', e);
     }
+  } else {
+    console.warn('Neizdevās ielādēt reģistru:', REGISTRY_URL);
   }
 
   if (!dataRes || !dataRes.ok) {
@@ -75,7 +85,9 @@ map.on('load', async () => {
   allFeatures = (geojson.features || []).map((f, i) => {
     if (!f.properties) f.properties = {};
 
-    const uidBase = (f.properties.id || f.properties.title) ? String(f.properties.id || f.properties.title) : `row_${i}`;
+    const uidBase = (f.properties.id || f.properties.title)
+      ? String(f.properties.id || f.properties.title)
+      : `row_${i}`;
     f.__uid = `${uidBase}__${i}`;
 
     f.properties.missing_info = normalizeBoolean(f.properties.missing_info);
@@ -84,7 +96,7 @@ map.on('load', async () => {
       f.properties.country = f.properties.country.trim();
     }
 
-    // normalizē foto URL (biežākais iemesls "uz mob nerādās attēli" ir mixed content ar http)
+    // foto normalizācija (mixed content fix)
     if (typeof f.properties.photos === 'string') {
       f.properties.photos = normalizePhotoField(f.properties.photos);
     } else if (Array.isArray(f.properties.photos)) {
@@ -97,6 +109,10 @@ map.on('load', async () => {
   updateTotalCountBadge(allFeatures.length);
   computeContinentStats();
 
+  // 1) Ielādē valstu poligonus un uztaisa slāņus iekrāsošanai
+  await addCountriesLayer();
+
+  // 2) Akmeņu source/layer
   map.addSource('stones', {
     type: 'geojson',
     data: { type: 'FeatureCollection', features: allFeatures }
@@ -120,7 +136,7 @@ map.on('load', async () => {
   });
 
   populateFilters();
-  applyFilters();
+  applyFilters(); // šis uzliks arī valstu iekrāsojumu
 });
 
 map.on('click', 'stones-layer', (e) => {
@@ -132,16 +148,13 @@ map.on('click', 'stones-layer', (e) => {
 map.on('mouseenter', 'stones-layer', () => { map.getCanvas().style.cursor = 'pointer'; });
 map.on('mouseleave', 'stones-layer', () => { map.getCanvas().style.cursor = ''; });
 
+// Meklēšana uzreiz filtrē (sidebar)
 els.search.addEventListener('input', () => applyFilters());
 
-els.continent.addEventListener('change', () => {
-  onContinentChange();
-});
+// Modal filtriem (kontinents -> valsts)
+els.continent.addEventListener('change', () => onContinentChange());
 
-els.country.addEventListener('change', () => {
-  // country ir atkarīgs no continent, bet te vienkārši pārfiltrējam
-});
-
+// Pielietot / reset
 els.applyFiltersBtn.addEventListener('click', () => {
   applyFilters();
   closeModal();
@@ -152,9 +165,6 @@ els.resetFilters.addEventListener('click', () => {
   applyFilters();
   closeModal();
 });
-
-els.author.addEventListener('change', () => {});
-els.year.addEventListener('change', () => {});
 
 function initModal() {
   els.openFilters.addEventListener('click', () => openModal());
@@ -202,15 +212,37 @@ function normalizeBoolean(v) {
   return s === 'true' || s === 'yes' || s === 'x' || s === 'on';
 }
 
+function normalizePhotoField(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return s;
+  const parts = s.split(/\r?\n|\||,/g).map(x => x.trim()).filter(Boolean);
+  return parts.map(normalizePhotoUrl).join('|');
+}
+
+function normalizePhotoUrl(url) {
+  const u = String(url || '').trim();
+  if (!u) return '';
+  if (u.startsWith('http://')) return 'https://' + u.slice('http://'.length);
+  return u;
+}
+
+// Reģistrs: country + continent + iso_a2
 function buildRegistryMaps(pairs) {
   countryToContinent = new Map();
   continentToCountries = new Map();
+  countryToIsoA2 = new Map();
 
   if (!Array.isArray(pairs)) return;
 
   pairs.forEach(item => {
     const country = String(item.country || '').trim();
     const continent = String(item.continent || '').trim();
+    const isoA2 = String(item.iso_a2 || '').trim().toUpperCase();
+
+    if (country && isoA2) {
+      countryToIsoA2.set(country, isoA2);
+    }
+
     if (!country || !continent) return;
 
     countryToContinent.set(country, continent);
@@ -354,6 +386,9 @@ function applyFilters() {
   });
 
   renderObjectsList();
+
+  // valstu iekrāsojums pēc filtrētajiem akmeņiem
+  updateActiveCountries();
 }
 
 function updateTotalCountBadge(n) {
@@ -376,6 +411,137 @@ function computeContinentStats() {
       continentCounts.set(UNKNOWN_CONTINENT_LABEL, (continentCounts.get(UNKNOWN_CONTINENT_LABEL) || 0) + 1);
       if (country) unknownCountries.add(country);
     }
+  });
+}
+
+// Valstu poligoni + slāņi
+async function addCountriesLayer() {
+  const res = await fetch(COUNTRIES_GEOJSON_URL, { cache: 'force-cache' }).catch(() => null);
+  if (!res || !res.ok) {
+    console.warn('Neizdevās ielādēt valstu poligonus:', COUNTRIES_GEOJSON_URL);
+    return;
+  }
+
+  const countriesGeojson = await res.json();
+
+  // Nodrošina feature.id = ISO_A2 (vajag setFeatureState)
+  countriesFeatureIds = new Set();
+  if (countriesGeojson && Array.isArray(countriesGeojson.features)) {
+    countriesGeojson.features.forEach(ft => {
+      const iso = ft && ft.properties && String(ft.properties.ISO_A2 || '').trim().toUpperCase();
+      if (iso) {
+        ft.id = iso;
+        countriesFeatureIds.add(iso);
+      }
+    });
+  }
+
+  if (map.getSource('countries')) return;
+
+  map.addSource('countries', {
+    type: 'geojson',
+    data: countriesGeojson
+  });
+
+  // Fill slānis (iekrāsošana)
+  map.addLayer({
+    id: 'countries-fill',
+    type: 'fill',
+    source: 'countries',
+    paint: {
+      'fill-color': [
+        'case',
+        ['boolean', ['feature-state', 'active'], false],
+        '#2b6cb0',
+        'rgba(0,0,0,0)'
+      ],
+      'fill-opacity': [
+        'case',
+        ['boolean', ['feature-state', 'active'], false],
+        0.25,
+        0
+      ]
+    }
+  });
+
+  // Outline slānis
+  map.addLayer({
+    id: 'countries-outline',
+    type: 'line',
+    source: 'countries',
+    paint: {
+      'line-width': [
+        'case',
+        ['boolean', ['feature-state', 'active'], false],
+        1.5,
+        0.5
+      ],
+      'line-color': [
+        'case',
+        ['boolean', ['feature-state', 'active'], false],
+        '#2b6cb0',
+        'rgba(0,0,0,0.25)'
+      ]
+    }
+  });
+
+  // Noliec zem punktiem, ja stones-layer jau ir, citādi atstājam kā ir
+  // (mapbox ļauj pārvietot slāni pēcāk)
+  tryMoveCountriesBelowStones();
+}
+
+function tryMoveCountriesBelowStones() {
+  try {
+    if (map.getLayer('stones-layer') && map.getLayer('countries-fill')) {
+      map.moveLayer('countries-fill', 'stones-layer');
+    }
+    if (map.getLayer('stones-layer') && map.getLayer('countries-outline')) {
+      map.moveLayer('countries-outline', 'stones-layer');
+    }
+  } catch (e) {
+    // ignorējam
+  }
+}
+
+// Uzliek feature-state active valstīm (pēc filteredFeatures)
+function updateActiveCountries() {
+  if (!map.getSource('countries')) return;
+
+  const prev = new Set(activeIsoSet);
+  activeIsoSet = new Set();
+
+  const isoCounts = new Map();
+
+  filteredFeatures.forEach(f => {
+    const p = f.properties || {};
+    const countryLv = String(p.country || '').trim();
+    const iso = countryToIsoA2.get(countryLv);
+    if (!iso) return;
+
+    const isoUp = String(iso).toUpperCase();
+    if (!countriesFeatureIds.has(isoUp)) return; // poligonu failā nav šādas valsts
+
+    isoCounts.set(isoUp, (isoCounts.get(isoUp) || 0) + 1);
+    activeIsoSet.add(isoUp);
+  });
+
+  // noņem tiem, kas vairs nav aktīvi
+  prev.forEach(iso => {
+    if (!activeIsoSet.has(iso)) {
+      try {
+        map.setFeatureState({ source: 'countries', id: iso }, { active: false, count: 0 });
+      } catch (e) {}
+    }
+  });
+
+  // uzliek aktīvajiem
+  activeIsoSet.forEach(iso => {
+    try {
+      map.setFeatureState(
+        { source: 'countries', id: iso },
+        { active: true, count: isoCounts.get(iso) || 0 }
+      );
+    } catch (e) {}
   });
 }
 
@@ -513,26 +679,6 @@ function getDisplayTitle(p) {
   return 'Bez nosaukuma';
 }
 
-function normalizePhotoField(raw) {
-  const s = String(raw || '').trim();
-  if (!s) return s;
-
-  // saglabā oriģinālo separatoru loģiku, tikai normalizē URL protokolu
-  const parts = s.split(/\r?\n|\||,/g).map(x => x.trim()).filter(Boolean);
-  return parts.map(normalizePhotoUrl).join('|');
-}
-
-function normalizePhotoUrl(url) {
-  const u = String(url || '').trim();
-  if (!u) return '';
-
-  // mixed content fix: ja lapa ir https un bilde ir http, mobilie pārlūki bieži bloķē
-  if (u.startsWith('http://')) return 'https://' + u.slice('http://'.length);
-
-  // Google drive thumbnails / googleusercontent parasti jau ir https, bet atstājam kā ir
-  return u;
-}
-
 function getPhotos(props) {
   const v = props.photos;
   if (Array.isArray(v)) return v.filter(Boolean);
@@ -565,10 +711,10 @@ function setupSlideshow(rootId, photos) {
       if (!img) return;
       img.src = photos[i];
       if (counter) counter.textContent = `${i + 1} / ${photos.length}`;
-      counter && counter.classList.toggle('slide-hidden', photos.length <= 1);
+      if (counter) counter.classList.toggle('slide-hidden', photos.length <= 1);
     };
 
-    // swipe on mobile
+    // swipe uz mob
     let startX = 0;
     let startY = 0;
 
@@ -586,7 +732,6 @@ function setupSlideshow(rootId, photos) {
       const dx = t.clientX - startX;
       const dy = t.clientY - startY;
 
-      // ignorē vertikālu scroll
       if (Math.abs(dy) > Math.abs(dx)) return;
 
       if (dx < -30) { i = (i + 1) % photos.length; update(); }
@@ -596,7 +741,7 @@ function setupSlideshow(rootId, photos) {
     root.addEventListener('touchstart', onTouchStart, { passive: true });
     root.addEventListener('touchend', onTouchEnd, { passive: true });
 
-    // arrows on desktop
+    // arrows uz desktop
     const onKey = (ev) => {
       if (ev.key === 'ArrowLeft') { i = (i - 1 + photos.length) % photos.length; update(); }
       if (ev.key === 'ArrowRight') { i = (i + 1) % photos.length; update(); }
