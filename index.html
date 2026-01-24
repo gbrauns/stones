@@ -5,7 +5,6 @@
   <title>Akmeņu karte</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Mapbox -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 
@@ -33,13 +32,14 @@
 
     <label class="checkbox">
       <input type="checkbox" id="filter-missing" />
-      Tikai ar “missing info”
+      Tikai ar missing info
     </label>
   </aside>
 
   <div id="map"></div>
 </div>
 
-<script src="js/app.js"></script>
+<script src="config.php?v=1"></script>
+<script src="js/app.js?v=1"></script>
 </body>
 </html>

@@ -1,5 +1,13 @@
+console.log('[AkmenuKarte] config loaded:', window.APP_CONFIG);
+
 const cfg = window.APP_CONFIG || {};
-if (!cfg.MAPBOX_TOKEN || !cfg.DATA_URL) {
+const hasToken = !!cfg.MAPBOX_TOKEN;
+const hasUrl = !!cfg.DATA_URL;
+
+console.log('[AkmenuKarte] has MAPBOX_TOKEN:', hasToken);
+console.log('[AkmenuKarte] has DATA_URL:', hasUrl);
+
+if (!hasToken || !hasUrl) {
   alert('Trūkst konfigurācijas. Pārbaudi .env (MAPBOX_TOKEN un DATA_URL).');
   throw new Error('Missing MAPBOX_TOKEN or DATA_URL');
 }
@@ -18,8 +26,13 @@ const map = new mapboxgl.Map({
 });
 
 map.on('load', async () => {
+  console.log('[AkmenuKarte] fetching data:', DATA_URL);
+
   const res = await fetch(DATA_URL);
+  console.log('[AkmenuKarte] data status:', res.status);
+
   const geojson = await res.json();
+  console.log('[AkmenuKarte] geojson sample:', geojson);
 
   allFeatures = geojson.features || [];
 
@@ -56,9 +69,7 @@ map.on('click', 'stones-layer', (e) => {
     <div class="popup-meta">${escapeHtml(p.author || '')} · ${escapeHtml(p.date || '')}</div>
   `;
 
-  if (p.description) {
-    html += `<div class="popup-desc">${escapeHtml(p.description)}</div>`;
-  }
+  if (p.description) html += `<div class="popup-desc">${escapeHtml(p.description)}</div>`;
 
   if (photos.length) {
     html += `<div class="popup-images">`;
@@ -87,7 +98,6 @@ document.getElementById('filter-missing').addEventListener('change', applyFilter
 
 function getPhotos(props) {
   const v = props.photos;
-
   if (Array.isArray(v)) return v.filter(Boolean);
   if (!v) return [];
 
@@ -101,10 +111,7 @@ function getPhotos(props) {
     } catch (e) {}
   }
 
-  return s
-    .split(/\r?\n|\||,/g)
-    .map(x => x.trim())
-    .filter(Boolean);
+  return s.split(/\r?\n|\||,/g).map(x => x.trim()).filter(Boolean);
 }
 
 function populateFilters() {
