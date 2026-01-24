@@ -43,8 +43,8 @@
   { "country": "Horvātija", "continent": "Eiropa" },
   { "country": "Kuba", "continent": "Ziemeļamerika" },
   { "country": "Kipra", "continent": "Eiropa" },
+  { "country": "Dienvidkoreja", "continent": "Āzija" },
   { "country": "Čehija", "continent": "Eiropa" },
-
   { "country": "Dānija", "continent": "Eiropa" },
   { "country": "Džibutija", "continent": "Āfrika" },
   { "country": "Dominika", "continent": "Ziemeļamerika" },
@@ -74,7 +74,7 @@
   { "country": "Gvineja", "continent": "Āfrika" },
   { "country": "Gvineja-Bisava", "continent": "Āfrika" },
   { "country": "Gajāna", "continent": "Dienvidamerika" },
-
+  { "country": "Maroka", "continent": "Āfrika" },
   { "country": "Haiti", "continent": "Ziemeļamerika" },
   { "country": "Hondurasa", "continent": "Ziemeļamerika" },
   { "country": "Ungārija", "continent": "Eiropa" },
@@ -116,6 +116,8 @@
 
   { "country": "Spānija", "continent": "Eiropa" },
   { "country": "Zviedrija", "continent": "Eiropa" },
+  { "country": "Saudu Arābija", "continent": "Āzija" },
+
   { "country": "Šveice", "continent": "Eiropa" },
 
   { "country": "Turcija", "continent": "Āzija" },
