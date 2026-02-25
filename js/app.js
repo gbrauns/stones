@@ -91,6 +91,7 @@ map.on('load', async () => {
       : `row_${i}`;
     f.__uid = `${uidBase}__${i}`;
     f.__index = i; // Vienkāršs index hash veidošanai
+    f.properties.__index = i; // Saglabā arī properties, lai Mapbox to nezaudē
 
     f.properties.missing_info = normalizeBoolean(f.properties.missing_info);
 
@@ -833,14 +834,25 @@ function openFeaturePopup(feature, lngLat) {
   const titleForHash = getDisplayTitle(p);
   const slug = slugify(titleForHash);
 
-  // Atrod feature index (ja nav __index, meklē pēc coordinates)
-  let featureIndex = feature.__index;
-  if (featureIndex === undefined && feature.geometry && feature.geometry.coordinates) {
-    const coords = feature.geometry.coordinates;
-    featureIndex = allFeatures.findIndex(f => {
-      const c = f.geometry && f.geometry.coordinates;
-      return c && c[0] === coords[0] && c[1] === coords[1];
-    });
+  // Atrod feature index (pārbauda vairākās vietās)
+  let featureIndex = feature.__index ?? p.__index;
+
+  // Ja nav, meklē pēc __uid (unikāls identifikators)
+  if (featureIndex === undefined && feature.__uid) {
+    featureIndex = allFeatures.findIndex(f => f.__uid === feature.__uid);
+  }
+
+  // Ja joprojām nav, meklē pēc coordinates + title (drošākais)
+  if (featureIndex === undefined || featureIndex === -1) {
+    if (feature.geometry && feature.geometry.coordinates) {
+      const coords = feature.geometry.coordinates;
+      featureIndex = allFeatures.findIndex(f => {
+        const c = f.geometry && f.geometry.coordinates;
+        const sameCoords = c && Math.abs(c[0] - coords[0]) < 0.000001 && Math.abs(c[1] - coords[1]) < 0.000001;
+        const sameTitle = getDisplayTitle(f.properties || {}) === titleForHash;
+        return sameCoords && sameTitle;
+      });
+    }
   }
 
   if (slug && featureIndex !== undefined && featureIndex >= 0) {
