@@ -832,9 +832,20 @@ function openFeaturePopup(feature, lngLat) {
   // Pievienojam feature index, lai atšķirtu dublikātus
   const titleForHash = getDisplayTitle(p);
   const slug = slugify(titleForHash);
-  if (slug && feature.__index !== undefined) {
-    // Pievienojam unikālu index hash beigās (īsāks nekā __uid)
-    const uniqueSlug = `${slug}-${feature.__index}`;
+
+  // Atrod feature index (ja nav __index, meklē pēc coordinates)
+  let featureIndex = feature.__index;
+  if (featureIndex === undefined && feature.geometry && feature.geometry.coordinates) {
+    const coords = feature.geometry.coordinates;
+    featureIndex = allFeatures.findIndex(f => {
+      const c = f.geometry && f.geometry.coordinates;
+      return c && c[0] === coords[0] && c[1] === coords[1];
+    });
+  }
+
+  if (slug && featureIndex !== undefined && featureIndex >= 0) {
+    // Pievienojam unikālu index hash beigās
+    const uniqueSlug = `${slug}-${featureIndex}`;
     window.location.hash = uniqueSlug;
   } else if (slug) {
     window.location.hash = slug;

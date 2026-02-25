@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="stoneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b9198;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5a6268;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Akmens forma -->
+  <path d="M 18 28
+           L 32 12
+           L 46 18
+           L 54 32
+           L 48 48
+           L 32 54
+           L 16 46
+           L 12 36
+           Z"
+        fill="url(#stoneGrad)"
+        stroke="#3d4246"
+        stroke-width="2"/>
+
+  <!-- Gaismas atspīdums -->
+  <ellipse cx="36" cy="24" rx="8" ry="6" fill="#a8adb3" opacity="0.4"/>
+
+  <!-- Ēna detaļa -->
+  <path d="M 20 42 L 28 50 L 32 54 L 16 46 Z" fill="#000000" opacity="0.15"/>
+</svg>
