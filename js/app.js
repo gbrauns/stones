@@ -8,7 +8,7 @@ mapboxgl.accessToken = cfg.MAPBOX_TOKEN;
 
 const DATA_URL = cfg.DATA_URL;
 const REGISTRY_URL = '/data/country_continent_lv.json';
-const COUNTRIES_GEOJSON_URL = '/data/countries_simplified.geojson';
+const COUNTRIES_GEOJSON_URL = '/data/countries_simplified.geojson.json';
 
 const UNKNOWN_CONTINENT_VALUE = '__UNKNOWN__';
 const UNKNOWN_CONTINENT_LABEL = 'Nezināms kontinents';
@@ -30,6 +30,7 @@ let activeIsoSet = new Set(); // ISO A2, kuriem count > 0 (filtered)
 let countriesFeatureIds = new Set(); // ISO A2, kas eksistē poligonu failā
 
 const els = {
+  loader: document.getElementById('loader'),
   totalCount: document.getElementById('total-count'),
   objectsList: document.getElementById('objects-list'),
   search: document.getElementById('filter-search'),
@@ -88,6 +89,7 @@ map.on('load', async () => {
       ? String(f.properties.id || f.properties.title)
       : `row_${i}`;
     f.__uid = `${uidBase}__${i}`;
+    f.__index = i; // Vienkāršs index hash veidošanai
 
     f.properties.missing_info = normalizeBoolean(f.properties.missing_info);
 
@@ -144,6 +146,9 @@ map.on('load', async () => {
 
   // Deep linking - ja URL satur hash, atver atbilstošo objektu
   openPopupFromHash();
+
+  // Paslēpj loader, kad viss ir ielādēts
+  hideLoader();
 });
 
 map.on('click', 'stones-layer', (e) => {
@@ -658,12 +663,17 @@ function openPopupFromHash() {
   const hash = window.location.hash.slice(1); // Noņem # no sākuma
   if (!hash) return;
 
-  // Meklē objektu, kuram atbilst šis slug
+  // Meklē objektu, kuram atbilst šis slug (ar vai bez index)
   const feature = allFeatures.find(f => {
     const p = f.properties || {};
     const title = getDisplayTitle(p);
     const slug = slugify(title);
-    return slug === hash;
+
+    // Mēģina ar pilno slug (slug-index)
+    const uniqueSlug = f.__index !== undefined ? `${slug}-${f.__index}` : slug;
+
+    // Atbalsta gan pilno, gan vienkāršo slug (backward compatibility)
+    return uniqueSlug === hash || slug === hash;
   });
 
   if (!feature) {
@@ -695,9 +705,14 @@ function openFeaturePopup(feature, lngLat) {
   const titleText = escapeHtml(getTitleWithCountry(p));
 
   // Ģenerē un iestata URL hash no nosaukuma
+  // Pievienojam feature index, lai atšķirtu dublikātus
   const titleForHash = getDisplayTitle(p);
   const slug = slugify(titleForHash);
-  if (slug) {
+  if (slug && feature.__index !== undefined) {
+    // Pievienojam unikālu index hash beigās (īsāks nekā __uid)
+    const uniqueSlug = `${slug}-${feature.__index}`;
+    window.location.hash = uniqueSlug;
+  } else if (slug) {
     window.location.hash = slug;
   }
 
@@ -852,4 +867,15 @@ function escapeHtml(s) {
 
 function escapeAttr(s) {
   return escapeHtml(s).replaceAll('`', '&#096;');
+}
+
+function hideLoader() {
+  if (!els.loader) return;
+  els.loader.classList.add('hidden');
+  // Pilnībā noņem no DOM pēc animācijas
+  setTimeout(() => {
+    if (els.loader && els.loader.parentNode) {
+      els.loader.parentNode.removeChild(els.loader);
+    }
+  }, 300);
 }
