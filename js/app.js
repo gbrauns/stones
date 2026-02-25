@@ -26,7 +26,8 @@ let continentCounts = new Map();
 let unknownCountries = new Set();
 
 // valstis iekrāsošanai
-let activeIsoSet = new Set(); // ISO A2, kuriem count > 0 (filtered)
+let activeIsoSet = new Set(); // ISO A2, kuriem count > 0 (no allFeatures)
+let filteredIsoSet = new Set(); // ISO A2, kuriem count > 0 (no filteredFeatures)
 let countriesFeatureIds = new Set(); // ISO A2, kas eksistē poligonu failā
 let highlightedCountryIso = null; // Pašlaik highlighted valsts (popup atvērts)
 
@@ -466,6 +467,7 @@ function applyFilters() {
   });
 
   renderObjectsList();
+  updateFilteredCountries();
 }
 
 function updateTotalCountBadge(n) {
@@ -584,6 +586,9 @@ async function addCountriesLayer() {
         // Highlighted valsts - biezāka līnija
         ['boolean', ['feature-state', 'highlighted'], false],
         2.5,
+        // Filtrēta valsts - vidēji bieza
+        ['boolean', ['feature-state', 'filtered'], false],
+        2,
         // Aktīva valsts
         ['boolean', ['feature-state', 'active'], false],
         1.5,
@@ -592,10 +597,13 @@ async function addCountriesLayer() {
       ],
       'line-color': [
         'case',
-        // Highlighted valsts - spilgtāka
+        // Highlighted valsts - spilgtāka zilā
         ['boolean', ['feature-state', 'highlighted'], false],
         '#4a90e2',
-        // Aktīva valsts
+        // Filtrēta valsts - oranža (aktīvs filtrējums)
+        ['boolean', ['feature-state', 'filtered'], false],
+        '#f97316',
+        // Aktīva valsts - normāla zilā
         ['boolean', ['feature-state', 'active'], false],
         '#2b6cb0',
         // Nav aktīva
@@ -670,6 +678,46 @@ function updateActiveCountries() {
     } catch (e) {
       console.error('[Countries] Failed to set feature state for:', iso, e);
     }
+  });
+}
+
+function updateFilteredCountries() {
+  if (!map.getSource('countries')) return;
+
+  const prev = new Set(filteredIsoSet);
+  filteredIsoSet = new Set();
+
+  // Apkopo ISO kodus no filtrētajiem objektiem
+  filteredFeatures.forEach(f => {
+    const p = f.properties || {};
+    const countryLv = String(p.country || '').trim();
+    if (!countryLv) return;
+
+    const iso = countryToIsoA2.get(countryLv);
+    if (!iso) return;
+
+    const isoUp = String(iso).toUpperCase();
+    if (!countriesFeatureIds.has(isoUp)) return;
+
+    filteredIsoSet.add(isoUp);
+  });
+
+  console.log('[Countries] filtered ISO:', filteredIsoSet.size);
+
+  // Noņem filtered state no iepriekšējām
+  prev.forEach(iso => {
+    if (!filteredIsoSet.has(iso)) {
+      try {
+        map.setFeatureState({ source: 'countries', id: iso }, { filtered: false });
+      } catch (e) {}
+    }
+  });
+
+  // Pievieno filtered state jaunajām
+  filteredIsoSet.forEach(iso => {
+    try {
+      map.setFeatureState({ source: 'countries', id: iso }, { filtered: true });
+    } catch (e) {}
   });
 }
 
