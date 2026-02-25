@@ -28,6 +28,7 @@ let unknownCountries = new Set();
 // valstis iekrāsošanai
 let activeIsoSet = new Set(); // ISO A2, kuriem count > 0 (filtered)
 let countriesFeatureIds = new Set(); // ISO A2, kas eksistē poligonu failā
+let highlightedCountryIso = null; // Pašlaik highlighted valsts (popup atvērts)
 
 const els = {
   loader: document.getElementById('loader'),
@@ -112,16 +113,67 @@ map.on('load', async () => {
   // 1) Countries polygons
   await addCountriesLayer();
 
-  // 2) Stones points
+  // 2) Stones points with clustering
   map.addSource('stones', {
     type: 'geojson',
-    data: { type: 'FeatureCollection', features: allFeatures }
+    data: { type: 'FeatureCollection', features: allFeatures },
+    cluster: true,
+    clusterMaxZoom: 14, // Maksimālais zoom, kurā darbojas clustering
+    clusterRadius: 50 // Radius pikseļos
   });
 
+  // Cluster apļi
+  map.addLayer({
+    id: 'clusters',
+    type: 'circle',
+    source: 'stones',
+    filter: ['has', 'point_count'],
+    paint: {
+      'circle-color': [
+        'step',
+        ['get', 'point_count'],
+        '#51bbd6', // < 10 punkti
+        10,
+        '#f1f075', // 10-29 punkti
+        30,
+        '#f28cb1'  // 30+ punkti
+      ],
+      'circle-radius': [
+        'step',
+        ['get', 'point_count'],
+        20,  // < 10 punkti
+        10,
+        30,  // 10-29 punkti
+        30,
+        40   // 30+ punkti
+      ],
+      'circle-stroke-width': 2,
+      'circle-stroke-color': '#fff'
+    }
+  });
+
+  // Cluster cipari
+  map.addLayer({
+    id: 'cluster-count',
+    type: 'symbol',
+    source: 'stones',
+    filter: ['has', 'point_count'],
+    layout: {
+      'text-field': '{point_count_abbreviated}',
+      'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+      'text-size': 14
+    },
+    paint: {
+      'text-color': '#ffffff'
+    }
+  });
+
+  // Atsevišķi punkti (ne-clustered)
   map.addLayer({
     id: 'stones-layer',
     type: 'circle',
     source: 'stones',
+    filter: ['!', ['has', 'point_count']], // Tikai ne-clustered punkti
     paint: {
       'circle-radius': 6,
       'circle-color': [
@@ -151,12 +203,34 @@ map.on('load', async () => {
   hideLoader();
 });
 
+// Click uz cluster - zoom in
+map.on('click', 'clusters', (e) => {
+  const features = map.queryRenderedFeatures(e.point, {
+    layers: ['clusters']
+  });
+  const clusterId = features[0].properties.cluster_id;
+  map.getSource('stones').getClusterExpansionZoom(
+    clusterId,
+    (err, zoom) => {
+      if (err) return;
+      map.easeTo({
+        center: features[0].geometry.coordinates,
+        zoom: zoom
+      });
+    }
+  );
+});
+
+// Click uz atsevišķa punkta - atver popup
 map.on('click', 'stones-layer', (e) => {
   const f = e.features && e.features[0];
   if (!f) return;
   openFeaturePopup(f, f.geometry.coordinates);
 });
 
+// Cursor styles
+map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer'; });
+map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = ''; });
 map.on('mouseenter', 'stones-layer', () => { map.getCanvas().style.cursor = 'pointer'; });
 map.on('mouseleave', 'stones-layer', () => { map.getCanvas().style.cursor = ''; });
 
@@ -476,14 +550,24 @@ async function addCountriesLayer() {
     paint: {
       'fill-color': [
         'case',
+        // Highlighted valsts (popup atvērts) - gaišāka
+        ['boolean', ['feature-state', 'highlighted'], false],
+        '#4a90e2',
+        // Aktīva valsts (ir objekti)
         ['boolean', ['feature-state', 'active'], false],
         '#2b6cb0',
+        // Nav aktīva
         'rgba(0,0,0,0)'
       ],
       'fill-opacity': [
         'case',
+        // Highlighted valsts - spilgtāka
+        ['boolean', ['feature-state', 'highlighted'], false],
+        0.5,
+        // Aktīva valsts
         ['boolean', ['feature-state', 'active'], false],
         0.25,
+        // Nav aktīva
         0
       ]
     }
@@ -496,14 +580,24 @@ async function addCountriesLayer() {
     paint: {
       'line-width': [
         'case',
+        // Highlighted valsts - biezāka līnija
+        ['boolean', ['feature-state', 'highlighted'], false],
+        2.5,
+        // Aktīva valsts
         ['boolean', ['feature-state', 'active'], false],
         1.5,
+        // Nav aktīva
         0.5
       ],
       'line-color': [
         'case',
+        // Highlighted valsts - spilgtāka
+        ['boolean', ['feature-state', 'highlighted'], false],
+        '#4a90e2',
+        // Aktīva valsts
         ['boolean', ['feature-state', 'active'], false],
         '#2b6cb0',
+        // Nav aktīva
         'rgba(0,0,0,0.25)'
       ]
     }
@@ -708,6 +802,32 @@ function openFeaturePopup(feature, lngLat) {
   const dateText = formatDateDDMMMYYYY(p.date);
   const titleText = escapeHtml(getTitleWithCountry(p));
 
+  // Highlight valsti
+  const countryLv = String(p.country || '').trim();
+  const iso = countryToIsoA2.get(countryLv);
+  if (iso && countriesFeatureIds.has(iso)) {
+    const isoUp = String(iso).toUpperCase();
+
+    // Noņem iepriekšējo highlight
+    if (highlightedCountryIso && highlightedCountryIso !== isoUp) {
+      try {
+        map.setFeatureState(
+          { source: 'countries', id: highlightedCountryIso },
+          { highlighted: false }
+        );
+      } catch (e) {}
+    }
+
+    // Pievieno jauno highlight
+    try {
+      map.setFeatureState(
+        { source: 'countries', id: isoUp },
+        { highlighted: true }
+      );
+      highlightedCountryIso = isoUp;
+    } catch (e) {}
+  }
+
   // Ģenerē un iestata URL hash no nosaukuma
   // Pievienojam feature index, lai atšķirtu dublikātus
   const titleForHash = getDisplayTitle(p);
@@ -740,7 +860,10 @@ function openFeaturePopup(feature, lngLat) {
     <div class="popup-wrap">
       <div class="popup-title">
         <span>${titleText}</span>
-        ${badge}
+        <div class="popup-title-actions">
+          <button class="copy-link-btn" type="button" title="Kopēt linku">🔗</button>
+          ${badge}
+        </div>
       </div>
       <div class="popup-meta">
         <span class="popup-chip">👤 ${escapeHtml(p.author || '')}</span>
@@ -760,9 +883,47 @@ function openFeaturePopup(feature, lngLat) {
     .setHTML(html)
     .addTo(map);
 
+  // Kad popup tiek aizvērts, noņem highlight
+  activePopup.on('close', () => {
+    if (highlightedCountryIso) {
+      try {
+        map.setFeatureState(
+          { source: 'countries', id: highlightedCountryIso },
+          { highlighted: false }
+        );
+      } catch (e) {}
+      highlightedCountryIso = null;
+    }
+  });
+
   if (photos.length) {
     setupSlideshow(popupId, photos);
   }
+
+  // Copy link funkcionalitāte
+  setTimeout(() => {
+    const copyBtn = document.querySelector('.copy-link-btn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          // Vizuāls feedback
+          copyBtn.textContent = '✓';
+          copyBtn.style.color = '#22c55e';
+          setTimeout(() => {
+            copyBtn.textContent = '🔗';
+            copyBtn.style.color = '';
+          }, 1500);
+        }).catch(() => {
+          // Fallback ja clipboard nedarbojas
+          copyBtn.textContent = '✗';
+          setTimeout(() => {
+            copyBtn.textContent = '🔗';
+          }, 1500);
+        });
+      });
+    }
+  }, 100);
 }
 
 function getTitleWithCountry(p) {

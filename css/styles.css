@@ -209,6 +209,32 @@ html, body {
   font-weight: 700;
   margin-bottom: 8px;
 }
+
+.popup-title-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.copy-link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.copy-link-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.copy-link-btn:active {
+  transform: scale(0.95);
+}
 .popup-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .popup-chip {
   font-size: 12px;
