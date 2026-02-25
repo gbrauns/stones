@@ -453,7 +453,6 @@ async function addCountriesLayer() {
     countriesGeojson.features.forEach(ft => {
       const iso = getIsoA2FromProperties(ft.properties);
       if (iso && iso.length === 2) {
-        ft.id = iso;
         countriesFeatureIds.add(iso);
       }
     });
@@ -463,9 +462,11 @@ async function addCountriesLayer() {
 
   if (map.getSource('countries')) return;
 
+  // Izmanto promoteId, lai ISO_A2 property tiktu izmantots kā feature ID
   map.addSource('countries', {
     type: 'geojson',
-    data: countriesGeojson
+    data: countriesGeojson,
+    promoteId: 'ISO_A2'
   });
 
   map.addLayer({
@@ -570,7 +571,10 @@ function updateActiveCountries() {
         { source: 'countries', id: iso },
         { active: true, count: isoCounts.get(iso) || 0 }
       );
-    } catch (e) {}
+      console.log('[Countries] Feature state set:', iso, '-> active');
+    } catch (e) {
+      console.error('[Countries] Failed to set feature state for:', iso, e);
+    }
   });
 }
 
