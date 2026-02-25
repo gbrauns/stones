@@ -138,6 +138,12 @@ map.on('load', async () => {
 
   populateFilters();
   applyFilters();
+
+  // Iekrāso valstis pēc allFeatures (tikai vienreiz)
+  updateActiveCountries();
+
+  // Deep linking - ja URL satur hash, atver atbilstošo objektu
+  openPopupFromHash();
 });
 
 map.on('click', 'stones-layer', (e) => {
@@ -380,7 +386,6 @@ function applyFilters() {
   });
 
   renderObjectsList();
-  updateActiveCountries();
 }
 
 function updateTotalCountBadge(n) {
@@ -521,7 +526,8 @@ function updateActiveCountries() {
   let missingIsoInRegistry = 0;
   let missingIsoInPolygons = 0;
 
-  filteredFeatures.forEach(f => {
+  // Izmanto allFeatures, lai valstis būtu iekrāsotas pēc visiem objektiem
+  allFeatures.forEach(f => {
     const p = f.properties || {};
     const countryLv = String(p.country || '').trim();
     if (!countryLv) return;
@@ -543,7 +549,7 @@ function updateActiveCountries() {
     activeIsoSet.add(isoUp);
   });
 
-  console.log('[Countries] active ISO after filter:', activeIsoSet.size, 'missing in registry:', missingIsoInRegistry, 'missing in polygons:', missingIsoInPolygons);
+  console.log('[Countries] active ISO (all features):', activeIsoSet.size, 'missing in registry:', missingIsoInRegistry, 'missing in polygons:', missingIsoInPolygons);
 
   prev.forEach(iso => {
     if (!activeIsoSet.has(iso)) {
@@ -627,6 +633,59 @@ function renderObjectsList() {
   });
 }
 
+function slugify(text) {
+  const str = String(text || '').trim().toLowerCase();
+
+  // Latviešu diakritisko zīmju aizstāšana
+  const map = {
+    'ā': 'a', 'č': 'c', 'ē': 'e', 'ģ': 'g', 'ī': 'i',
+    'ķ': 'k', 'ļ': 'l', 'ņ': 'n', 'š': 's', 'ū': 'u', 'ž': 'z'
+  };
+
+  let result = '';
+  for (let char of str) {
+    result += map[char] || char;
+  }
+
+  return result
+    .replace(/[^\w\s-]/g, '') // Noņem visas nederīgās rakstzīmes
+    .replace(/\s+/g, '-')      // Atstarpes -> domuzīme
+    .replace(/-+/g, '-')       // Vairākas domuzīmes -> viena
+    .replace(/^-+|-+$/g, '');  // Noņem domuzīmes no sākuma/beigām
+}
+
+function openPopupFromHash() {
+  const hash = window.location.hash.slice(1); // Noņem # no sākuma
+  if (!hash) return;
+
+  // Meklē objektu, kuram atbilst šis slug
+  const feature = allFeatures.find(f => {
+    const p = f.properties || {};
+    const title = getDisplayTitle(p);
+    const slug = slugify(title);
+    return slug === hash;
+  });
+
+  if (!feature) {
+    console.log('[Deep link] objekts nav atrasts:', hash);
+    return;
+  }
+
+  const coords = feature.geometry.coordinates;
+
+  // Fly to objekta koordinātām
+  map.flyTo({
+    center: coords,
+    zoom: 8,
+    speed: 1.5
+  });
+
+  // Atver popup pēc nelielas pauzes
+  setTimeout(() => {
+    openFeaturePopup(feature, coords);
+  }, 800);
+}
+
 function openFeaturePopup(feature, lngLat) {
   const p = feature.properties || {};
   const photos = getPhotos(p).map(normalizePhotoUrl);
@@ -634,6 +693,13 @@ function openFeaturePopup(feature, lngLat) {
 
   const dateText = formatDateDDMMMYYYY(p.date);
   const titleText = escapeHtml(getTitleWithCountry(p));
+
+  // Ģenerē un iestata URL hash no nosaukuma
+  const titleForHash = getDisplayTitle(p);
+  const slug = slugify(titleForHash);
+  if (slug) {
+    window.location.hash = slug;
+  }
 
   const badge = missing
     ? `<span class="badge-missing">⚠️ missing info</span>`
