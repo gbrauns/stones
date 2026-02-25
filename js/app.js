@@ -687,6 +687,25 @@ function updateFilteredCountries() {
   const prev = new Set(filteredIsoSet);
   filteredIsoSet = new Set();
 
+  // Pārbauda, vai kāds filtrs ir aktīvs
+  const hasActiveFilters =
+    els.author.value ||
+    els.year.value ||
+    els.continent.value ||
+    els.country.value ||
+    (els.search && els.search.value.trim());
+
+  // Ja nav aktīvu filtru, noņem visus filtered states
+  if (!hasActiveFilters) {
+    console.log('[Countries] no active filters, clearing filtered states');
+    prev.forEach(iso => {
+      try {
+        map.setFeatureState({ source: 'countries', id: iso }, { filtered: false });
+      } catch (e) {}
+    });
+    return;
+  }
+
   // Apkopo ISO kodus no filtrētajiem objektiem
   filteredFeatures.forEach(f => {
     const p = f.properties || {};
