@@ -9,6 +9,7 @@ mapboxgl.accessToken = cfg.MAPBOX_TOKEN;
 const DATA_URL = cfg.DATA_URL;
 const REGISTRY_URL = '/data/country_continent_lv.json';
 const COUNTRIES_GEOJSON_URL = '/data/countries_simplified.geojson.json';
+const VERSION_URL = '/version.json';
 
 const UNKNOWN_CONTINENT_VALUE = '__UNKNOWN__';
 const UNKNOWN_CONTINENT_LABEL = 'Nezināms kontinents';
@@ -47,7 +48,9 @@ const els = {
   author: document.getElementById('filter-author'),
   year: document.getElementById('filter-year'),
   continent: document.getElementById('filter-continent'),
-  country: document.getElementById('filter-country')
+  country: document.getElementById('filter-country'),
+
+  versionNumber: document.getElementById('version-number')
 };
 
 const map = new mapboxgl.Map({
@@ -59,6 +62,7 @@ const map = new mapboxgl.Map({
 
 map.on('load', async () => {
   initModal();
+  loadVersion();
 
   const [registryRes, dataRes] = await Promise.all([
     fetch(REGISTRY_URL, { cache: 'force-cache' }).catch(() => null),
@@ -938,10 +942,8 @@ function openFeaturePopup(feature, lngLat) {
 
   let slideshowHtml = '';
   if (media.length) {
-    const firstMedia = createMediaElement(media[0], 0);
     slideshowHtml = `
       <div class="slideshow" id="${popupId}">
-        ${firstMedia}
         <button class="slide-nav slide-prev" type="button" aria-label="Iepriekšējais">‹</button>
         <button class="slide-nav slide-next" type="button" aria-label="Nākamais">›</button>
         <div class="slide-counter">1 / ${media.length}</div>
@@ -1120,24 +1122,21 @@ function setupSlideshow(rootId, media) {
     const nextBtn = root.querySelector('.slide-next');
 
     let i = 0;
-    let mediaContainer = null;
 
     const update = () => {
-      // Noņem veco media
-      if (mediaContainer) {
-        mediaContainer.remove();
-      }
+      // Noņem VISUS media elementus (img, video, iframe)
+      root.querySelectorAll('img, video, iframe').forEach(el => el.remove());
 
       // Izveido jaunu media elementu
       const wrapper = document.createElement('div');
       wrapper.innerHTML = createMediaElement(media[i], i);
-      mediaContainer = wrapper.firstElementChild;
+      const mediaElement = wrapper.firstElementChild;
 
-      // Ievieto pirms pogām
+      // Ievieto pirms pogām (pirmais elements)
       if (prevBtn) {
-        root.insertBefore(mediaContainer, prevBtn);
+        root.insertBefore(mediaElement, prevBtn);
       } else {
-        root.insertBefore(mediaContainer, root.firstChild);
+        root.insertBefore(mediaElement, root.firstChild);
       }
 
       // Atjauno counter
@@ -1250,4 +1249,21 @@ function hideLoader() {
       els.loader.parentNode.removeChild(els.loader);
     }
   }, 300);
+}
+
+async function loadVersion() {
+  if (!els.versionNumber) return;
+
+  try {
+    const res = await fetch(VERSION_URL, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('Failed to load version');
+
+    const data = await res.json();
+    const version = String(data.version || '?').trim();
+
+    els.versionNumber.textContent = version;
+  } catch (e) {
+    console.warn('[Version] failed to load:', e);
+    els.versionNumber.textContent = '?';
+  }
 }

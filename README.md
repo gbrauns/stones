@@ -49,6 +49,7 @@ Interaktīva pasaules karte ar akmeņiem un pieminekļiem. Mapbox-bāzēta web a
 stones/
 ├── index.html              # Galvenā HTML lapa
 ├── config.php              # Konfigurācija (MAPBOX_TOKEN, DATA_URL)
+├── version.json            # Versijas numurs (automātiski palielinās ar git push)
 ├── css/
 │   └── styles.css          # Visi stili (responsive, animations)
 ├── js/
@@ -57,6 +58,32 @@ stones/
 │   ├── country_continent_lv.json          # Valstu reģistrs (112 valstis)
 │   └── countries_simplified.geojson.json  # Valstu poligoni (242 features)
 └── README.md               # Šis fails
+```
+
+## 🔢 Versiju vadība
+
+Projekts izmanto automātisku versiju palielināšanu:
+
+- **Versija glabājas:** `version.json` failā
+- **Sākuma versija:** 1.9
+- **Palielināšana:** Ar katru `git push` versija automātiski palielinās par 0.1
+- **Manuāla izmaiņa:** Var rediģēt `version.json` failu tieši, ja nepieciešams
+
+### Git Hook uzstādīšana (automātiska versiju palielināšana)
+
+Hooks ir jau iestatīts projektā. Ja tas nedarbojas:
+
+```bash
+chmod +x .git/hooks/pre-push
+```
+
+### Manuāla versijas izmaiņa
+
+Rediģē `version.json`:
+```json
+{
+  "version": "2.5"
+}
 ```
 
 ## ⚙️ Konfigurācija
