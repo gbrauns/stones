@@ -68,6 +68,7 @@ Projekts izmanto automātisku versiju palielināšanu:
 - **Sākuma versija:** 1.8
 - **Palielināšana:** Ar katru `git push` versija automātiski palielinās (1.8 → 1.9 → 1.10 → 1.11 → ... → 1.100)
 - **Manuāla izmaiņa:** Var rediģēt `version.json` failu tieši, ja nepieciešams
+- **Svarīgi:** Ja pushots TIKAI `version.json` izmaiņas, versija nepalielinās (novērš bezgalīgu cilpu)
 
 ### Git Hook uzstādīšana (automātiska versiju palielināšana)
 
