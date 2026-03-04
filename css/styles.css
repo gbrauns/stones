@@ -301,6 +301,11 @@ html, body {
   background: #000;
   user-select: none;
   -webkit-user-select: none;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: min-height 0.15s ease;
 }
 
 .slideshow img,

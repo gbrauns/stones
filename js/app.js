@@ -1059,11 +1059,11 @@ function getPhotos(props) {
 function isVideoUrl(url) {
   const u = String(url || '').toLowerCase();
   // Atbalsta video failus un video hostingus
-  return u.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i) ||
+  return /\.(mp4|webm|mov|avi|mkv)/i.test(u) ||
          u.includes('youtube.com') ||
          u.includes('youtu.be') ||
          u.includes('vimeo.com') ||
-         u.includes('drive.google.com/file') && u.includes('/view');
+         (u.includes('drive.google.com/file') && u.includes('/view'));
 }
 
 function getEmbedUrl(url) {
@@ -1124,6 +1124,12 @@ function setupSlideshow(rootId, media) {
     let i = 0;
 
     const update = () => {
+      // Saglabā pašreizējo augstumu, lai novērstu rausīšanos
+      const currentHeight = root.offsetHeight;
+      if (currentHeight > 0) {
+        root.style.minHeight = `${currentHeight}px`;
+      }
+
       // Noņem VISUS media elementus (img, video, iframe)
       root.querySelectorAll('img, video, iframe').forEach(el => el.remove());
 
@@ -1137,6 +1143,20 @@ function setupSlideshow(rootId, media) {
         root.insertBefore(mediaElement, prevBtn);
       } else {
         root.insertBefore(mediaElement, root.firstChild);
+      }
+
+      // Ja ir attēls, gaidām ielādi un tad noņemam min-height
+      if (mediaElement.tagName === 'IMG') {
+        mediaElement.addEventListener('load', () => {
+          setTimeout(() => {
+            root.style.minHeight = '';
+          }, 100);
+        }, { once: true });
+      } else {
+        // Video vai iframe - noņemam min-height pēc nelielas pauzes
+        setTimeout(() => {
+          root.style.minHeight = '';
+        }, 200);
       }
 
       // Atjauno counter

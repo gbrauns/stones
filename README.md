@@ -65,8 +65,8 @@ stones/
 Projekts izmanto automātisku versiju palielināšanu:
 
 - **Versija glabājas:** `version.json` failā
-- **Sākuma versija:** 1.9
-- **Palielināšana:** Ar katru `git push` versija automātiski palielinās par 0.1
+- **Sākuma versija:** 1.8
+- **Palielināšana:** Ar katru `git push` versija automātiski palielinās (1.8 → 1.9 → 1.10 → 1.11 → ... → 1.100)
 - **Manuāla izmaiņa:** Var rediģēt `version.json` failu tieši, ja nepieciešams
 
 ### Git Hook uzstādīšana (automātiska versiju palielināšana)
@@ -82,9 +82,12 @@ chmod +x .git/hooks/pre-push
 Rediģē `version.json`:
 ```json
 {
-  "version": "2.5"
+  "version": "1.25"
 }
 ```
+
+Versija palielinās pēc šī principa:
+- 1.8 → 1.9 → 1.10 → 1.11 → ... → 1.99 → 1.100
 
 ## ⚙️ Konfigurācija
 
