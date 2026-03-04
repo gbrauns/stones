@@ -864,7 +864,7 @@ function openPopupFromHash() {
 
 function openFeaturePopup(feature, lngLat) {
   const p = feature.properties || {};
-  const photos = getPhotos(p).map(normalizePhotoUrl);
+  const media = getPhotos(p).map(normalizePhotoUrl);
   const missing = normalizeBoolean(p.missing_info);
 
   const dateText = formatDateDDMMMYYYY(p.date);
@@ -931,17 +931,20 @@ function openFeaturePopup(feature, lngLat) {
   }
 
   const badge = missing
-    ? `<span class="badge-missing">⚠️ missing info</span>`
-    : `<span class="badge-ok">✅ ok</span>`;
+    ? `<span class="badge-missing">⚠️ trūkst info</span>`
+    : `<span class="badge-ok">✓ ok</span>`;
 
   const popupId = `sl_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
 
   let slideshowHtml = '';
-  if (photos.length) {
+  if (media.length) {
+    const firstMedia = createMediaElement(media[0], 0);
     slideshowHtml = `
       <div class="slideshow" id="${popupId}">
-        <img src="${escapeAttr(photos[0])}" loading="lazy" />
-        <div class="slide-counter">1 / ${photos.length}</div>
+        ${firstMedia}
+        <button class="slide-nav slide-prev" type="button" aria-label="Iepriekšējais">‹</button>
+        <button class="slide-nav slide-next" type="button" aria-label="Nākamais">›</button>
+        <div class="slide-counter">1 / ${media.length}</div>
       </div>
     `;
   }
@@ -968,7 +971,10 @@ function openFeaturePopup(feature, lngLat) {
 
   if (activePopup) activePopup.remove();
 
-  activePopup = new mapboxgl.Popup({ closeOnClick: true })
+  activePopup = new mapboxgl.Popup({
+    closeOnClick: true,
+    maxWidth: '460px'
+  })
     .setLngLat(lngLat)
     .setHTML(html)
     .addTo(map);
@@ -986,8 +992,8 @@ function openFeaturePopup(feature, lngLat) {
     }
   });
 
-  if (photos.length) {
-    setupSlideshow(popupId, photos);
+  if (media.length) {
+    setupSlideshow(popupId, media);
   }
 
   // Copy link funkcionalitāte
@@ -1048,23 +1054,121 @@ function getPhotos(props) {
   return s.split(/\r?\n|\||,/g).map(x => x.trim()).filter(Boolean);
 }
 
-function setupSlideshow(rootId, photos) {
+function isVideoUrl(url) {
+  const u = String(url || '').toLowerCase();
+  // Atbalsta video failus un video hostingus
+  return u.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i) ||
+         u.includes('youtube.com') ||
+         u.includes('youtu.be') ||
+         u.includes('vimeo.com') ||
+         u.includes('drive.google.com/file') && u.includes('/view');
+}
+
+function getEmbedUrl(url) {
+  const u = String(url || '').trim();
+
+  // YouTube
+  let match = u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\/]+)/);
+  if (match) return `https://www.youtube.com/embed/${match[1]}`;
+
+  // Vimeo
+  match = u.match(/vimeo\.com\/(\d+)/);
+  if (match) return `https://player.vimeo.com/video/${match[1]}`;
+
+  // Google Drive
+  match = u.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
+  if (match) return `https://drive.google.com/file/${match[1]}/preview`;
+
+  return null;
+}
+
+function createMediaElement(url, index) {
+  const embedUrl = getEmbedUrl(url);
+
+  if (embedUrl) {
+    // Embedded video (YouTube, Vimeo, Google Drive)
+    return `<iframe
+      src="${escapeAttr(embedUrl)}"
+      frameborder="0"
+      allow="autoplay; fullscreen; picture-in-picture"
+      allowfullscreen
+      loading="lazy"
+    ></iframe>`;
+  } else if (isVideoUrl(url)) {
+    // Direct video file
+    return `<video
+      src="${escapeAttr(url)}"
+      controls
+      playsinline
+      preload="metadata"
+    >
+      Tavs pārlūks neatbalsta video.
+    </video>`;
+  } else {
+    // Image
+    return `<img src="${escapeAttr(url)}" loading="lazy" alt="Media ${index + 1}" />`;
+  }
+}
+
+function setupSlideshow(rootId, media) {
   setTimeout(() => {
     const root = document.getElementById(rootId);
     if (!root) return;
 
-    const img = root.querySelector('img');
     const counter = root.querySelector('.slide-counter');
+    const prevBtn = root.querySelector('.slide-prev');
+    const nextBtn = root.querySelector('.slide-next');
 
     let i = 0;
+    let mediaContainer = null;
 
     const update = () => {
-      if (!img) return;
-      img.src = photos[i];
-      if (counter) counter.textContent = `${i + 1} / ${photos.length}`;
-      if (counter) counter.classList.toggle('slide-hidden', photos.length <= 1);
+      // Noņem veco media
+      if (mediaContainer) {
+        mediaContainer.remove();
+      }
+
+      // Izveido jaunu media elementu
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = createMediaElement(media[i], i);
+      mediaContainer = wrapper.firstElementChild;
+
+      // Ievieto pirms pogām
+      if (prevBtn) {
+        root.insertBefore(mediaContainer, prevBtn);
+      } else {
+        root.insertBefore(mediaContainer, root.firstChild);
+      }
+
+      // Atjauno counter
+      if (counter) {
+        counter.textContent = `${i + 1} / ${media.length}`;
+        counter.classList.toggle('slide-hidden', media.length <= 1);
+      }
+
+      // Paslēp/rāda pogas
+      if (prevBtn && nextBtn) {
+        const shouldHide = media.length <= 1;
+        prevBtn.classList.toggle('slide-hidden', shouldHide);
+        nextBtn.classList.toggle('slide-hidden', shouldHide);
+      }
     };
 
+    const goPrev = () => {
+      i = (i - 1 + media.length) % media.length;
+      update();
+    };
+
+    const goNext = () => {
+      i = (i + 1) % media.length;
+      update();
+    };
+
+    // Pogu event listeners
+    if (prevBtn) prevBtn.addEventListener('click', goPrev);
+    if (nextBtn) nextBtn.addEventListener('click', goNext);
+
+    // Touch swipe atbalsts
     let startX = 0;
     let startY = 0;
 
@@ -1082,14 +1186,27 @@ function setupSlideshow(rootId, photos) {
       const dx = t.clientX - startX;
       const dy = t.clientY - startY;
 
+      // Ignorē vertikālos swipes
       if (Math.abs(dy) > Math.abs(dx)) return;
 
-      if (dx < -30) { i = (i + 1) % photos.length; update(); }
-      if (dx > 30) { i = (i - 1 + photos.length) % photos.length; update(); }
+      if (dx < -50) goNext();
+      if (dx > 50) goPrev();
     };
 
     root.addEventListener('touchstart', onTouchStart, { passive: true });
     root.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    // Keyboard navigation (tikai ja popup ir aktīvs)
+    const onKeyDown = (ev) => {
+      if (!document.body.contains(root)) {
+        document.removeEventListener('keydown', onKeyDown);
+        return;
+      }
+      if (ev.key === 'ArrowLeft') goPrev();
+      if (ev.key === 'ArrowRight') goNext();
+    };
+
+    document.addEventListener('keydown', onKeyDown);
 
     update();
   }, 0);
