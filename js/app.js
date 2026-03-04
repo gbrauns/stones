@@ -1102,7 +1102,8 @@ function createMediaElement(url, index) {
       src="${escapeAttr(url)}"
       controls
       playsinline
-      preload="metadata"
+      preload="auto"
+      controlslist="nodownload"
     >
       Tavs pārlūks neatbalsta video.
     </video>`;
@@ -1138,6 +1139,9 @@ function setupSlideshow(rootId, media) {
       wrapper.innerHTML = createMediaElement(media[i], i);
       const mediaElement = wrapper.firstElementChild;
 
+      // Debug logging
+      console.log('[Slideshow] Media type:', mediaElement.tagName, 'URL:', media[i]);
+
       // Ievieto pirms pogām (pirmais elements)
       if (prevBtn) {
         root.insertBefore(mediaElement, prevBtn);
@@ -1145,15 +1149,27 @@ function setupSlideshow(rootId, media) {
         root.insertBefore(mediaElement, root.firstChild);
       }
 
-      // Ja ir attēls, gaidām ielādi un tad noņemam min-height
-      if (mediaElement.tagName === 'IMG') {
+      // Ja ir video, pievienojam event listeners
+      if (mediaElement.tagName === 'VIDEO') {
+        mediaElement.addEventListener('loadeddata', () => {
+          console.log('[Video] Data loaded, ready to play');
+          setTimeout(() => {
+            root.style.minHeight = '';
+          }, 100);
+        }, { once: true });
+
+        mediaElement.addEventListener('error', (e) => {
+          console.error('[Video] Error loading:', e, 'URL:', media[i]);
+        });
+      } else if (mediaElement.tagName === 'IMG') {
+        // Ja ir attēls, gaidām ielādi un tad noņemam min-height
         mediaElement.addEventListener('load', () => {
           setTimeout(() => {
             root.style.minHeight = '';
           }, 100);
         }, { once: true });
       } else {
-        // Video vai iframe - noņemam min-height pēc nelielas pauzes
+        // iframe - noņemam min-height pēc nelielas pauzes
         setTimeout(() => {
           root.style.minHeight = '';
         }, 200);
