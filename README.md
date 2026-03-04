@@ -207,6 +207,22 @@ Katram objektam tiek ģenerēts unikāls URL hash:
 - Safari 14+
 - Mobile browsers (iOS Safari, Chrome Mobile)
 
+## 📋 TODO / Zināmās problēmas
+
+### Google Drive video atbalsts
+**Problēma:** Google Drive thumbnail URLs (`drive.google.com/thumbnail?id=...`) nevar tikt atskaņoti kā video iframe.
+
+**Pašreizējais stāvoklis:**
+- ✅ YouTube video darbojas
+- ✅ Vimeo video darbojas
+- ✅ Direct .mp4 faili darbojas
+- ❌ Google Drive video nedarbojas (rāda tikai thumbnail attēlu)
+
+**Iespējamie risinājumi:**
+1. **Atsevišķs video lauks:** Pievienot `video` property GeoJSON datos (papildus `photos`)
+2. **Direct download URL:** Izmantot `https://drive.google.com/uc?export=download&id=FILE_ID`
+3. **YouTube/Vimeo:** Upload video uz šīm platformām
+
 ## 📝 Licence
 
 [Tava licence šeit]

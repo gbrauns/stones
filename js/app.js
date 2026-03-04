@@ -1058,6 +1058,13 @@ function getPhotos(props) {
 
 function isVideoUrl(url) {
   const u = String(url || '').toLowerCase();
+  // TODO: Pievienot Google Drive video atbalstu
+  // Problēma: iframe embedding nedarbojas ar drive.google.com/thumbnail URLs
+  // Iespējamie risinājumi:
+  //   1. Atsevišķs "video" lauks datos (papildus "photos")
+  //   2. Direct download URL: drive.google.com/uc?export=download&id=FILE_ID
+  //   3. YouTube/Vimeo upload
+
   // Atbalsta tikai direct video failus un video hostingus (BEZ Google Drive)
   return /\.(mp4|webm|mov|avi|mkv)/i.test(u) ||
          u.includes('youtube.com') ||
