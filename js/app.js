@@ -1077,19 +1077,30 @@ function getEmbedUrl(url) {
   match = u.match(/vimeo\.com\/(\d+)/);
   if (match) return `https://player.vimeo.com/video/${match[1]}`;
 
-  // Google Drive - vairāki formāti
+  // Google Drive - ekstraktē FILE_ID un izveido preview URL
   if (u.includes('drive.google.com')) {
+    let fileId = null;
+
     // Thumbnail format: drive.google.com/thumbnail?id=FILE_ID
     match = u.match(/[?&]id=([^&]+)/);
-    if (match) return `https://drive.google.com/file/${match[1]}/preview`;
+    if (match) fileId = match[1];
 
     // File format: drive.google.com/file/d/FILE_ID
-    match = u.match(/\/file\/d\/([^\/]+)/);
-    if (match) return `https://drive.google.com/file/${match[1]}/preview`;
+    if (!fileId) {
+      match = u.match(/\/file\/d\/([^\/]+)/);
+      if (match) fileId = match[1];
+    }
 
     // Open format: drive.google.com/open?id=FILE_ID
-    match = u.match(/\/open\?id=([^&]+)/);
-    if (match) return `https://drive.google.com/file/${match[1]}/preview`;
+    if (!fileId) {
+      match = u.match(/\/open\?id=([^&]+)/);
+      if (match) fileId = match[1];
+    }
+
+    if (fileId) {
+      // Mēģina preview URL (vajag publisku piekļuvi)
+      return `https://drive.google.com/file/${fileId}/preview`;
+    }
   }
 
   return null;
