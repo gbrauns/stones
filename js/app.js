@@ -1058,12 +1058,11 @@ function getPhotos(props) {
 
 function isVideoUrl(url) {
   const u = String(url || '').toLowerCase();
-  // Atbalsta video failus un video hostingus
+  // Atbalsta tikai direct video failus un video hostingus (BEZ Google Drive)
   return /\.(mp4|webm|mov|avi|mkv)/i.test(u) ||
          u.includes('youtube.com') ||
          u.includes('youtu.be') ||
-         u.includes('vimeo.com') ||
-         u.includes('drive.google.com');  // Visi Google Drive linki (var būt video vai attēli)
+         u.includes('vimeo.com');
 }
 
 function getEmbedUrl(url) {
@@ -1076,32 +1075,6 @@ function getEmbedUrl(url) {
   // Vimeo
   match = u.match(/vimeo\.com\/(\d+)/);
   if (match) return `https://player.vimeo.com/video/${match[1]}`;
-
-  // Google Drive - ekstraktē FILE_ID un izveido preview URL
-  if (u.includes('drive.google.com')) {
-    let fileId = null;
-
-    // Thumbnail format: drive.google.com/thumbnail?id=FILE_ID
-    match = u.match(/[?&]id=([^&]+)/);
-    if (match) fileId = match[1];
-
-    // File format: drive.google.com/file/d/FILE_ID
-    if (!fileId) {
-      match = u.match(/\/file\/d\/([^\/]+)/);
-      if (match) fileId = match[1];
-    }
-
-    // Open format: drive.google.com/open?id=FILE_ID
-    if (!fileId) {
-      match = u.match(/\/open\?id=([^&]+)/);
-      if (match) fileId = match[1];
-    }
-
-    if (fileId) {
-      // Mēģina preview URL (vajag publisku piekļuvi)
-      return `https://drive.google.com/file/${fileId}/preview`;
-    }
-  }
 
   return null;
 }
