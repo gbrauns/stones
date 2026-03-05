@@ -110,6 +110,13 @@ map.on('load', async () => {
       f.properties.photos = f.properties.photos.map(normalizePhotoUrl);
     }
 
+    // Normalizējam arī videos lauku (ja eksistē)
+    if (typeof f.properties.videos === 'string') {
+      f.properties.videos = normalizePhotoField(f.properties.videos);
+    } else if (Array.isArray(f.properties.videos)) {
+      f.properties.videos = f.properties.videos.map(normalizePhotoUrl);
+    }
+
     return f;
   });
 
@@ -868,7 +875,7 @@ function openPopupFromHash() {
 
 function openFeaturePopup(feature, lngLat) {
   const p = feature.properties || {};
-  const media = getPhotos(p).map(normalizePhotoUrl);
+  const media = getMediaWithTypes(p);
   const missing = normalizeBoolean(p.missing_info);
 
   const dateText = formatDateDDMMMYYYY(p.date);
@@ -1056,16 +1063,66 @@ function getPhotos(props) {
   return s.split(/\r?\n|\||,/g).map(x => x.trim()).filter(Boolean);
 }
 
+function getVideos(props) {
+  const v = props.videos;
+  if (Array.isArray(v)) return v.filter(Boolean);
+  if (!v) return [];
+
+  const s = String(v).trim();
+  if (!s) return [];
+
+  if (s.startsWith('[')) {
+    try {
+      const arr = JSON.parse(s);
+      return Array.isArray(arr) ? arr.filter(Boolean) : [];
+    } catch (e) {}
+  }
+
+  return s.split(/\r?\n|\||,/g).map(x => x.trim()).filter(Boolean);
+}
+
+// Apvieno attēlus un video vienā masīvā ar type informāciju
+function getMediaWithTypes(props) {
+  const photos = getPhotos(props);
+  const videos = getVideos(props);
+
+  const media = [];
+
+  // Pievienojam attēlus
+  photos.forEach(url => {
+    media.push({ url: normalizePhotoUrl(url), type: 'image' });
+  });
+
+  // Pievienojam video
+  videos.forEach(url => {
+    media.push({ url: normalizePhotoUrl(url), type: 'video' });
+  });
+
+  return media;
+}
+
+function isGoogleDriveUrl(url) {
+  const u = String(url || '').toLowerCase();
+  return u.includes('drive.google.com');
+}
+
+function getGoogleDriveFileId(url) {
+  const patterns = [
+    /\/file\/d\/([^\/]+)/,           // /file/d/FILE_ID/view
+    /[?&]id=([^&]+)/,                // thumbnail?id=FILE_ID
+    /\/open\?id=([^&]+)/,            // /open?id=FILE_ID
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
 function isVideoUrl(url) {
   const u = String(url || '').toLowerCase();
-  // TODO: Pievienot Google Drive video atbalstu
-  // Problēma: iframe embedding nedarbojas ar drive.google.com/thumbnail URLs
-  // Iespējamie risinājumi:
-  //   1. Atsevišķs "video" lauks datos (papildus "photos")
-  //   2. Direct download URL: drive.google.com/uc?export=download&id=FILE_ID
-  //   3. YouTube/Vimeo upload
-
-  // Atbalsta tikai direct video failus un video hostingus (BEZ Google Drive)
+  // Direct video faili un video hostingi
   return /\.(mp4|webm|mov|avi|mkv)/i.test(u) ||
          u.includes('youtube.com') ||
          u.includes('youtu.be') ||
@@ -1086,19 +1143,37 @@ function getEmbedUrl(url) {
   return null;
 }
 
-function createMediaElement(url, index) {
-  const embedUrl = getEmbedUrl(url);
+function createMediaElement(mediaItem, index) {
+  const url = mediaItem.url || mediaItem;
+  const type = mediaItem.type || 'image';
 
-  if (embedUrl) {
-    // Embedded video (YouTube, Vimeo, Google Drive)
-    return `<iframe
-      src="${escapeAttr(embedUrl)}"
-      frameborder="0"
-      allow="autoplay; fullscreen; picture-in-picture"
-      allowfullscreen
-      loading="lazy"
-    ></iframe>`;
-  } else if (isVideoUrl(url)) {
+  // Ja ir type='video', mēģinam embed vai direct video
+  if (type === 'video') {
+    const embedUrl = getEmbedUrl(url);
+
+    if (embedUrl) {
+      // Embedded video (YouTube, Vimeo)
+      return `<iframe
+        src="${escapeAttr(embedUrl)}"
+        frameborder="0"
+        allow="autoplay; fullscreen; picture-in-picture"
+        allowfullscreen
+        loading="lazy"
+      ></iframe>`;
+    } else if (isGoogleDriveUrl(url)) {
+      // Google Drive video - izmantojam preview
+      const fileId = getGoogleDriveFileId(url);
+      if (fileId) {
+        return `<iframe
+          src="https://drive.google.com/file/d/${escapeAttr(fileId)}/preview"
+          frameborder="0"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowfullscreen
+          loading="lazy"
+        ></iframe>`;
+      }
+    }
+
     // Direct video file
     return `<video
       src="${escapeAttr(url)}"
@@ -1110,7 +1185,7 @@ function createMediaElement(url, index) {
       Tavs pārlūks neatbalsta video.
     </video>`;
   } else {
-    // Image
+    // Image (default)
     return `<img src="${escapeAttr(url)}" loading="lazy" alt="Media ${index + 1}" />`;
   }
 }
@@ -1142,7 +1217,9 @@ function setupSlideshow(rootId, media) {
       const mediaElement = wrapper.firstElementChild;
 
       // Debug logging
-      console.log('[Slideshow] Media type:', mediaElement.tagName, 'URL:', media[i]);
+      const mediaUrl = media[i].url || media[i];
+      const mediaType = media[i].type || 'image';
+      console.log('[Slideshow] Media type:', mediaType, 'Element:', mediaElement.tagName, 'URL:', mediaUrl);
 
       // Ievieto pirms pogām (pirmais elements)
       if (prevBtn) {
