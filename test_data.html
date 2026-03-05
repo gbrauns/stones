@@ -1,0 +1,61 @@
+<!-- Testa lapa - atver pārlūkā, lai testētu -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Test Media Loading</title>
+</head>
+<body>
+<h1>Test Google Sheets data structure</h1>
+<pre id="output"></pre>
+
+<script>
+// Simulē, kā dati varētu izskatīties
+const testData = {
+  properties: {
+    photos: "https://drive.google.com/file/d/1U9zxdn-IrPycJrWBn-MvOlBxEjL4aQML/view",
+    videos: "https://drive.google.com/file/d/1JmxBOCvVmqDPZ01jIfJwBzPTXnyMSiNf/view"
+  }
+};
+
+// Kopē funkcijas no app.js
+function getPhotos(props) {
+  const v = props.photos;
+  if (!v) return [];
+  const s = String(v).trim();
+  if (!s) return [];
+  return s.split(/\r?\n|\||,/g).map(x => x.trim()).filter(Boolean);
+}
+
+function getVideos(props) {
+  const v = props.videos;
+  if (!v) return [];
+  const s = String(v).trim();
+  if (!s) return [];
+  return s.split(/\r?\n|\||,/g).map(x => x.trim()).filter(Boolean);
+}
+
+function getMediaWithTypes(props) {
+  const photos = getPhotos(props);
+  const videos = getVideos(props);
+  const media = [];
+  
+  photos.forEach(url => {
+    media.push({ url: url, type: 'image' });
+  });
+  
+  videos.forEach(url => {
+    media.push({ url: url, type: 'video' });
+  });
+  
+  return media;
+}
+
+// Testē
+const result = getMediaWithTypes(testData.properties);
+document.getElementById('output').textContent = JSON.stringify(result, null, 2);
+
+console.log('Test result:', result);
+</script>
+</body>
+</html>
