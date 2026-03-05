@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8">
+  <title>Test Video Support</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    .test-result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+    .pass { background: #d4edda; }
+    .fail { background: #f8d7da; }
+    pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Video Support Test</h1>
+  <div id="results"></div>
+
+  <script>
+    // Kopē funkcijas no app.js
+    function normalizePhotoUrl(url) {
+      const u = String(url || '').trim();
+      if (!u) return '';
+      if (u.startsWith('http://')) return 'https://' + u.slice('http://'.length);
+      return u;
+    }
+
+    function getPhotos(props) {
+      const v = props.photos;
+      if (Array.isArray(v)) return v.filter(Boolean);
+      if (!v) return [];
+      const s = String(v).trim();
+      if (!s) return [];
+      if (s.startsWith('[')) {
+        try {
+          const arr = JSON.parse(s);
+          return Array.isArray(arr) ? arr.filter(Boolean) : [];
+        } catch (e) {}
+      }
+      return s.split(/\r?\n|\||,/g).map(x => x.trim()).filter(Boolean);
+    }
+
+    function getVideos(props) {
+      const v = props.videos;
+      if (Array.isArray(v)) return v.filter(Boolean);
+      if (!v) return [];
+      const s = String(v).trim();
+      if (!s) return [];
+      if (s.startsWith('[')) {
+        try {
+          const arr = JSON.parse(s);
+          return Array.isArray(arr) ? arr.filter(Boolean) : [];
+        } catch (e) {}
+      }
+      return s.split(/\r?\n|\||,/g).map(x => x.trim()).filter(Boolean);
+    }
+
+    function getMediaWithTypes(props) {
+      const photos = getPhotos(props);
+      const videos = getVideos(props);
+      const media = [];
+
+      photos.forEach(url => {
+        media.push({ url: normalizePhotoUrl(url), type: 'image' });
+      });
+
+      videos.forEach(url => {
+        media.push({ url: normalizePhotoUrl(url), type: 'video' });
+      });
+
+      return media;
+    }
+
+    function isGoogleDriveUrl(url) {
+      const u = String(url || '').toLowerCase();
+      return u.includes('drive.google.com');
+    }
+
+    function getGoogleDriveFileId(url) {
+      const patterns = [
+        /\/file\/d\/([^\/]+)/,
+        /[?&]id=([^&]+)/,
+        /\/open\?id=([^&]+)/,
+      ];
+
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) return match[1];
+      }
+      return null;
+    }
+
+    // Test cases
+    const results = document.getElementById('results');
+
+    function addResult(title, pass, details) {
+      const div = document.createElement('div');
+      div.className = `test-result ${pass ? 'pass' : 'fail'}`;
+      div.innerHTML = `
+        <h3>${pass ? '✅' : '❌'} ${title}</h3>
+        <pre>${details}</pre>
+      `;
+      results.appendChild(div);
+    }
+
+    // Test 1: Tikai photos
+    const test1 = {
+      photos: "https://drive.google.com/file/d/1U9zxdn-IrPycJrWBn-MvOlBxEjL4aQML/view"
+    };
+    const result1 = getMediaWithTypes(test1);
+    addResult(
+      'Test 1: Tikai photos',
+      result1.length === 1 && result1[0].type === 'image',
+      JSON.stringify(result1, null, 2)
+    );
+
+    // Test 2: Tikai videos
+    const test2 = {
+      videos: "https://drive.google.com/file/d/1JmxBOCvVmqDPZ01jIfJwBzPTXnyMSiNf/view"
+    };
+    const result2 = getMediaWithTypes(test2);
+    addResult(
+      'Test 2: Tikai videos',
+      result2.length === 1 && result2[0].type === 'video',
+      JSON.stringify(result2, null, 2)
+    );
+
+    // Test 3: Abi kopā
+    const test3 = {
+      photos: "https://drive.google.com/file/d/1U9zxdn-IrPycJrWBn-MvOlBxEjL4aQML/view",
+      videos: "https://drive.google.com/file/d/1JmxBOCvVmqDPZ01jIfJwBzPTXnyMSiNf/view"
+    };
+    const result3 = getMediaWithTypes(test3);
+    addResult(
+      'Test 3: Photos + Videos',
+      result3.length === 2 && result3[0].type === 'image' && result3[1].type === 'video',
+      JSON.stringify(result3, null, 2)
+    );
+
+    // Test 4: Vairāki attēli un video
+    const test4 = {
+      photos: "url1|url2|url3",
+      videos: "video1|video2"
+    };
+    const result4 = getMediaWithTypes(test4);
+    addResult(
+      'Test 4: Vairāki faili',
+      result4.length === 5 && result4.filter(m => m.type === 'image').length === 3 && result4.filter(m => m.type === 'video').length === 2,
+      JSON.stringify(result4, null, 2)
+    );
+
+    // Test 5: Tukši lauki
+    const test5 = {
+      photos: "",
+      videos: ""
+    };
+    const result5 = getMediaWithTypes(test5);
+    addResult(
+      'Test 5: Tukši lauki',
+      result5.length === 0,
+      JSON.stringify(result5, null, 2)
+    );
+
+    // Test 6: Google Drive File ID extraction
+    const testUrl = "https://drive.google.com/file/d/1JmxBOCvVmqDPZ01jIfJwBzPTXnyMSiNf/view?usp=drive_link";
+    const fileId = getGoogleDriveFileId(testUrl);
+    addResult(
+      'Test 6: Google Drive File ID',
+      fileId === '1JmxBOCvVmqDPZ01jIfJwBzPTXnyMSiNf',
+      `File ID: ${fileId}\nExpected: 1JmxBOCvVmqDPZ01jIfJwBzPTXnyMSiNf`
+    );
+
+    // Test 7: Preview URL generation
+    const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+    addResult(
+      'Test 7: Preview URL',
+      previewUrl === 'https://drive.google.com/file/d/1JmxBOCvVmqDPZ01jIfJwBzPTXnyMSiNf/preview',
+      `Preview URL: ${previewUrl}`
+    );
+
+    console.log('All tests completed!');
+  </script>
+</body>
+</html>
