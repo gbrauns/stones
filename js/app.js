@@ -397,13 +397,18 @@ function initModalSwipe() {
 }
 
 function initMobileTabs() {
-  if (!els.mobileTabs) return;
+  if (!els.mobileTabs) {
+    console.log('[Mobile Tabs] Element not found');
+    return;
+  }
 
   const tabs = els.mobileTabs.querySelectorAll('.mobile-tab');
+  console.log('[Mobile Tabs] Initialized with', tabs.length, 'tabs');
 
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const targetTab = tab.dataset.tab;
+      console.log('[Mobile Tabs] Switching to:', targetTab);
 
       // Update active tab
       tabs.forEach(t => t.classList.remove('active'));
@@ -411,13 +416,21 @@ function initMobileTabs() {
 
       // Switch content
       if (targetTab === 'list') {
+        console.log('[Mobile Tabs] Showing list');
         els.sidebar.classList.add('active');
         els.mapContainer.classList.remove('active');
       } else if (targetTab === 'map') {
+        console.log('[Mobile Tabs] Showing map');
         els.sidebar.classList.remove('active');
         els.mapContainer.classList.add('active');
-        // Resize map when switching to it
-        setTimeout(() => map.resize(), 100);
+
+        // Resize map when switching to it (multiple attempts for reliability)
+        setTimeout(() => {
+          console.log('[Mobile Tabs] Resizing map');
+          map.resize();
+        }, 100);
+        setTimeout(() => map.resize(), 300);
+        setTimeout(() => map.resize(), 500);
       }
 
       // Haptic feedback (if supported)

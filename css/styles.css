@@ -811,11 +811,11 @@ html, body {
 
   /* Tab content switching */
   .tab-content {
-    display: none;
+    display: none !important;
   }
 
   .tab-content.active {
-    display: flex;
+    display: flex !important;
   }
 
   #sidebar {
@@ -834,6 +834,10 @@ html, body {
   #map {
     height: calc(100vh - 56px); /* Full height minus tabs */
     width: 100%;
+  }
+
+  #map.active {
+    display: block !important;
   }
 
   /* Mobile sheet modal (bottom sheet) */

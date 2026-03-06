@@ -1,5 +1,5 @@
-const CACHE_NAME = 'stones-cache-v1.27';
-const RUNTIME_CACHE = 'stones-runtime-v1.27';
+const CACHE_NAME = 'stones-cache-v1.28';
+const RUNTIME_CACHE = 'stones-runtime-v1.28';
 
 // Files to cache immediately
 const PRECACHE_URLS = [
