@@ -1,131 +1,1167 @@
 [
-  { "country": "Afganistāna", "continent": "Āzija", "iso_a2": "AF" },
-  { "country": "Albānija", "continent": "Eiropa", "iso_a2": "AL" },
-  { "country": "Alžīrija", "continent": "Āfrika", "iso_a2": "DZ" },
-  { "country": "Andora", "continent": "Eiropa", "iso_a2": "AD" },
-  { "country": "Angola", "continent": "Āfrika", "iso_a2": "AO" },
-  { "country": "Antigva un Barbuda", "continent": "Ziemeļamerika", "iso_a2": "AG" },
-  { "country": "Argentīna", "continent": "Dienvidamerika", "iso_a2": "AR" },
-  { "country": "Armēnija", "continent": "Āzija", "iso_a2": "AM" },
-  { "country": "Austrālija", "continent": "Okeānija", "iso_a2": "AU" },
-  { "country": "Austrija", "continent": "Eiropa", "iso_a2": "AT" },
-  { "country": "Azerbaidžāna", "continent": "Āzija", "iso_a2": "AZ" },
-
-  { "country": "Bahamu Salas", "continent": "Ziemeļamerika", "iso_a2": "BS" },
-  { "country": "Bahreina", "continent": "Āzija", "iso_a2": "BH" },
-  { "country": "Bangladeša", "continent": "Āzija", "iso_a2": "BD" },
-  { "country": "Barbadosa", "continent": "Ziemeļamerika", "iso_a2": "BB" },
-  { "country": "Baltkrievija", "continent": "Eiropa", "iso_a2": "BY" },
-  { "country": "Beļģija", "continent": "Eiropa", "iso_a2": "BE" },
-  { "country": "Beliza", "continent": "Ziemeļamerika", "iso_a2": "BZ" },
-  { "country": "Benina", "continent": "Āfrika", "iso_a2": "BJ" },
-  { "country": "Butāna", "continent": "Āzija", "iso_a2": "BT" },
-  { "country": "Bolīvija", "continent": "Dienvidamerika", "iso_a2": "BO" },
-  { "country": "Bosnija un Hercegovina", "continent": "Eiropa", "iso_a2": "BA" },
-  { "country": "Botsvāna", "continent": "Āfrika", "iso_a2": "BW" },
-  { "country": "Brazīlija", "continent": "Dienvidamerika", "iso_a2": "BR" },
-  { "country": "Bruneja", "continent": "Āzija", "iso_a2": "BN" },
-  { "country": "Bulgārija", "continent": "Eiropa", "iso_a2": "BG" },
-  { "country": "Burkinafaso", "continent": "Āfrika", "iso_a2": "BF" },
-  { "country": "Burundi", "continent": "Āfrika", "iso_a2": "BI" },
-
-  { "country": "Kambodža", "continent": "Āzija", "iso_a2": "KH" },
-  { "country": "Kamerūna", "continent": "Āfrika", "iso_a2": "CM" },
-  { "country": "Kanāda", "continent": "Ziemeļamerika", "iso_a2": "CA" },
-  { "country": "Kaboverde", "continent": "Āfrika", "iso_a2": "CV" },
-  { "country": "Centrālāfrikas Republika", "continent": "Āfrika", "iso_a2": "CF" },
-  { "country": "Čada", "continent": "Āfrika", "iso_a2": "TD" },
-  { "country": "Čīle", "continent": "Dienvidamerika", "iso_a2": "CL" },
-  { "country": "Ķīna", "continent": "Āzija", "iso_a2": "CN" },
-  { "country": "Kolumbija", "continent": "Dienvidamerika", "iso_a2": "CO" },
-  { "country": "Komoru Salas", "continent": "Āfrika", "iso_a2": "KM" },
-  { "country": "Kostarika", "continent": "Ziemeļamerika", "iso_a2": "CR" },
-  { "country": "Horvātija", "continent": "Eiropa", "iso_a2": "HR" },
-  { "country": "Kuba", "continent": "Ziemeļamerika", "iso_a2": "CU" },
-  { "country": "Kipra", "continent": "Eiropa", "iso_a2": "CY" },
-  { "country": "Dienvidkoreja", "continent": "Āzija", "iso_a2": "KR" },
-  { "country": "Čehija", "continent": "Eiropa", "iso_a2": "CZ" },
-  { "country": "Dānija", "continent": "Eiropa", "iso_a2": "DK" },
-  { "country": "Džibutija", "continent": "Āfrika", "iso_a2": "DJ" },
-  { "country": "Dominika", "continent": "Ziemeļamerika", "iso_a2": "DM" },
-  { "country": "Dominikānas Republika", "continent": "Ziemeļamerika", "iso_a2": "DO" },
-
-  { "country": "Ekvadora", "continent": "Dienvidamerika", "iso_a2": "EC" },
-  { "country": "Ēģipte", "continent": "Āfrika", "iso_a2": "EG" },
-  { "country": "Salvadora", "continent": "Ziemeļamerika", "iso_a2": "SV" },
-  { "country": "Ekvatoriālā Gvineja", "continent": "Āfrika", "iso_a2": "GQ" },
-  { "country": "Eritreja", "continent": "Āfrika", "iso_a2": "ER" },
-  { "country": "Igaunija", "continent": "Eiropa", "iso_a2": "EE" },
-  { "country": "Esvatīni", "continent": "Āfrika", "iso_a2": "SZ" },
-  { "country": "Etiopija", "continent": "Āfrika", "iso_a2": "ET" },
-
-  { "country": "Fidži", "continent": "Okeānija", "iso_a2": "FJ" },
-  { "country": "Somija", "continent": "Eiropa", "iso_a2": "FI" },
-  { "country": "Francija", "continent": "Eiropa", "iso_a2": "FR" },
-
-  { "country": "Gabona", "continent": "Āfrika", "iso_a2": "GA" },
-  { "country": "Gambija", "continent": "Āfrika", "iso_a2": "GM" },
-  { "country": "Gruzija", "continent": "Āzija", "iso_a2": "GE" },
-  { "country": "Vācija", "continent": "Eiropa", "iso_a2": "DE" },
-  { "country": "Gana", "continent": "Āfrika", "iso_a2": "GH" },
-  { "country": "Grieķija", "continent": "Eiropa", "iso_a2": "GR" },
-  { "country": "Grenāda", "continent": "Ziemeļamerika", "iso_a2": "GD" },
-  { "country": "Gvatemala", "continent": "Ziemeļamerika", "iso_a2": "GT" },
-  { "country": "Gvineja", "continent": "Āfrika", "iso_a2": "GN" },
-  { "country": "Gvineja-Bisava", "continent": "Āfrika", "iso_a2": "GW" },
-  { "country": "Gajāna", "continent": "Dienvidamerika", "iso_a2": "GY" },
-  { "country": "Maroka", "continent": "Āfrika", "iso_a2": "MA" },
-  { "country": "Haiti", "continent": "Ziemeļamerika", "iso_a2": "HT" },
-  { "country": "Hondurasa", "continent": "Ziemeļamerika", "iso_a2": "HN" },
-  { "country": "Ungārija", "continent": "Eiropa", "iso_a2": "HU" },
-
-  { "country": "Islande", "continent": "Eiropa", "iso_a2": "IS" },
-  { "country": "Indija", "continent": "Āzija", "iso_a2": "IN" },
-  { "country": "Indonēzija", "continent": "Āzija", "iso_a2": "ID" },
-  { "country": "Irāna", "continent": "Āzija", "iso_a2": "IR" },
-  { "country": "Irāka", "continent": "Āzija", "iso_a2": "IQ" },
-  { "country": "Īrija", "continent": "Eiropa", "iso_a2": "IE" },
-  { "country": "Izraēla", "continent": "Āzija", "iso_a2": "IL" },
-  { "country": "Itālija", "continent": "Eiropa", "iso_a2": "IT" },
-  { "country": "Slovākija", "continent": "Eiropa", "iso_a2": "SK" },
-  { "country": "Japāna", "continent": "Āzija", "iso_a2": "JP" },
-  { "country": "Jordānija", "continent": "Āzija", "iso_a2": "JO" },
-
-  { "country": "Kazahstāna", "continent": "Āzija", "iso_a2": "KZ" },
-  { "country": "Kenija", "continent": "Āfrika", "iso_a2": "KE" },
-  { "country": "Kirgizstāna", "continent": "Āzija", "iso_a2": "KG" },
-  { "country": "Kuveita", "continent": "Āzija", "iso_a2": "KW" },
-
-  { "country": "Latvija", "continent": "Eiropa", "iso_a2": "LV" },
-  { "country": "Lietuva", "continent": "Eiropa", "iso_a2": "LT" },
-  { "country": "Luksemburga", "continent": "Eiropa", "iso_a2": "LU" },
-  { "country": "Sīrija", "continent": "Āzija", "iso_a2": "SY" },
-  { "country": "Meksika", "continent": "Ziemeļamerika", "iso_a2": "MX" },
-  { "country": "Moldova", "continent": "Eiropa", "iso_a2": "MD" },
-  { "country": "Malta", "continent": "Eiropa", "iso_a2": "MT" },
-  { "country": "Mongolija", "continent": "Āzija", "iso_a2": "MN" },
-
-  { "country": "Nīderlande", "continent": "Eiropa", "iso_a2": "NL" },
-  { "country": "Norvēģija", "continent": "Eiropa", "iso_a2": "NO" },
-
-  { "country": "Polija", "continent": "Eiropa", "iso_a2": "PL" },
-  { "country": "Portugāle", "continent": "Eiropa", "iso_a2": "PT" },
-
-  { "country": "Rumānija", "continent": "Eiropa", "iso_a2": "RO" },
-  { "country": "Krievija", "continent": "Eiropa", "iso_a2": "RU" },
-
-  { "country": "Spānija", "continent": "Eiropa", "iso_a2": "ES" },
-  { "country": "Zviedrija", "continent": "Eiropa", "iso_a2": "SE" },
-  { "country": "Saudu Arābija", "continent": "Āzija", "iso_a2": "SA" },
-  { "country": "Puerto Rico", "continent": "Dienvidamerika", "iso_a2": "PR" },
-  { "country": "Šveice", "continent": "Eiropa", "iso_a2": "CH" },
-
-  { "country": "Turcija", "continent": "Āzija", "iso_a2": "TR" },
-
-  { "country": "Ukraina", "continent": "Eiropa", "iso_a2": "UA" },
-
-  
-  { "country": "Amerikas Savienotās Valstis", "continent": "Ziemeļamerika", "iso_a2": "US" },
-
-  { "country": "Zimbabve", "continent": "Āfrika", "iso_a2": "ZW" }
+  {
+    "country": "Antarktīda",
+    "continent": "Antarktīda",
+    "iso_a2": "AQ"
+  },
+  {
+    "country": "Alžīrija",
+    "continent": "Āfrika",
+    "iso_a2": "DZ"
+  },
+  {
+    "country": "Angola",
+    "continent": "Āfrika",
+    "iso_a2": "AO"
+  },
+  {
+    "country": "Benina",
+    "continent": "Āfrika",
+    "iso_a2": "BJ"
+  },
+  {
+    "country": "Botsvāna",
+    "continent": "Āfrika",
+    "iso_a2": "BW"
+  },
+  {
+    "country": "Burkinafaso",
+    "continent": "Āfrika",
+    "iso_a2": "BF"
+  },
+  {
+    "country": "Burundi",
+    "continent": "Āfrika",
+    "iso_a2": "BI"
+  },
+  {
+    "country": "Centrālāfrikas Republika",
+    "continent": "Āfrika",
+    "iso_a2": "CF"
+  },
+  {
+    "country": "Čada",
+    "continent": "Āfrika",
+    "iso_a2": "TD"
+  },
+  {
+    "country": "Dienvidāfrika",
+    "continent": "Āfrika",
+    "iso_a2": "ZA"
+  },
+  {
+    "country": "Dienvidsudāna",
+    "continent": "Āfrika",
+    "iso_a2": "SS"
+  },
+  {
+    "country": "Džibutija",
+    "continent": "Āfrika",
+    "iso_a2": "DJ"
+  },
+  {
+    "country": "Ekvatoriālā Gvineja",
+    "continent": "Āfrika",
+    "iso_a2": "GQ"
+  },
+  {
+    "country": "Eritreja",
+    "continent": "Āfrika",
+    "iso_a2": "ER"
+  },
+  {
+    "country": "Esvatīni",
+    "continent": "Āfrika",
+    "iso_a2": "SZ"
+  },
+  {
+    "country": "Etiopija",
+    "continent": "Āfrika",
+    "iso_a2": "ET"
+  },
+  {
+    "country": "Ēģipte",
+    "continent": "Āfrika",
+    "iso_a2": "EG"
+  },
+  {
+    "country": "Gabona",
+    "continent": "Āfrika",
+    "iso_a2": "GA"
+  },
+  {
+    "country": "Gambija",
+    "continent": "Āfrika",
+    "iso_a2": "GM"
+  },
+  {
+    "country": "Gana",
+    "continent": "Āfrika",
+    "iso_a2": "GH"
+  },
+  {
+    "country": "Gvineja",
+    "continent": "Āfrika",
+    "iso_a2": "GN"
+  },
+  {
+    "country": "Gvineja-Bisava",
+    "continent": "Āfrika",
+    "iso_a2": "GW"
+  },
+  {
+    "country": "Kaboverde",
+    "continent": "Āfrika",
+    "iso_a2": "CV"
+  },
+  {
+    "country": "Kamerūna",
+    "continent": "Āfrika",
+    "iso_a2": "CM"
+  },
+  {
+    "country": "Kenija",
+    "continent": "Āfrika",
+    "iso_a2": "KE"
+  },
+  {
+    "country": "Komoru Salas",
+    "continent": "Āfrika",
+    "iso_a2": "KM"
+  },
+  {
+    "country": "Kongo Demokrātiskā Republika",
+    "continent": "Āfrika",
+    "iso_a2": "CD"
+  },
+  {
+    "country": "Kongo Republika",
+    "continent": "Āfrika",
+    "iso_a2": "CG"
+  },
+  {
+    "country": "Kotdivuāra",
+    "continent": "Āfrika",
+    "iso_a2": "CI"
+  },
+  {
+    "country": "Lesoto",
+    "continent": "Āfrika",
+    "iso_a2": "LS"
+  },
+  {
+    "country": "Libērija",
+    "continent": "Āfrika",
+    "iso_a2": "LR"
+  },
+  {
+    "country": "Lībija",
+    "continent": "Āfrika",
+    "iso_a2": "LY"
+  },
+  {
+    "country": "Madagaskara",
+    "continent": "Āfrika",
+    "iso_a2": "MG"
+  },
+  {
+    "country": "Malāvija",
+    "continent": "Āfrika",
+    "iso_a2": "MW"
+  },
+  {
+    "country": "Mali",
+    "continent": "Āfrika",
+    "iso_a2": "ML"
+  },
+  {
+    "country": "Maroka",
+    "continent": "Āfrika",
+    "iso_a2": "MA"
+  },
+  {
+    "country": "Mauritānija",
+    "continent": "Āfrika",
+    "iso_a2": "MR"
+  },
+  {
+    "country": "Mozambika",
+    "continent": "Āfrika",
+    "iso_a2": "MZ"
+  },
+  {
+    "country": "Namībija",
+    "continent": "Āfrika",
+    "iso_a2": "NA"
+  },
+  {
+    "country": "Nigēra",
+    "continent": "Āfrika",
+    "iso_a2": "NE"
+  },
+  {
+    "country": "Nigērija",
+    "continent": "Āfrika",
+    "iso_a2": "NG"
+  },
+  {
+    "country": "Rietumsahāra",
+    "continent": "Āfrika",
+    "iso_a2": "EH"
+  },
+  {
+    "country": "Ruanda",
+    "continent": "Āfrika",
+    "iso_a2": "RW"
+  },
+  {
+    "country": "Santome un Prinsipi",
+    "continent": "Āfrika",
+    "iso_a2": "ST"
+  },
+  {
+    "country": "Senegāla",
+    "continent": "Āfrika",
+    "iso_a2": "SN"
+  },
+  {
+    "country": "Sjerraleone",
+    "continent": "Āfrika",
+    "iso_a2": "SL"
+  },
+  {
+    "country": "Somālija",
+    "continent": "Āfrika",
+    "iso_a2": "SO"
+  },
+  {
+    "country": "Sudāna",
+    "continent": "Āfrika",
+    "iso_a2": "SD"
+  },
+  {
+    "country": "Tanzānija",
+    "continent": "Āfrika",
+    "iso_a2": "TZ"
+  },
+  {
+    "country": "Togo",
+    "continent": "Āfrika",
+    "iso_a2": "TG"
+  },
+  {
+    "country": "Tunisija",
+    "continent": "Āfrika",
+    "iso_a2": "TN"
+  },
+  {
+    "country": "Uganda",
+    "continent": "Āfrika",
+    "iso_a2": "UG"
+  },
+  {
+    "country": "Zambija",
+    "continent": "Āfrika",
+    "iso_a2": "ZM"
+  },
+  {
+    "country": "Zimbabve",
+    "continent": "Āfrika",
+    "iso_a2": "ZW"
+  },
+  {
+    "country": "Afganistāna",
+    "continent": "Āzija",
+    "iso_a2": "AF"
+  },
+  {
+    "country": "Apvienotie Arābu Emirāti",
+    "continent": "Āzija",
+    "iso_a2": "AE"
+  },
+  {
+    "country": "Armēnija",
+    "continent": "Āzija",
+    "iso_a2": "AM"
+  },
+  {
+    "country": "Austrumtimora",
+    "continent": "Āzija",
+    "iso_a2": "TL"
+  },
+  {
+    "country": "Azerbaidžāna",
+    "continent": "Āzija",
+    "iso_a2": "AZ"
+  },
+  {
+    "country": "Bahreina",
+    "continent": "Āzija",
+    "iso_a2": "BH"
+  },
+  {
+    "country": "Bangladeša",
+    "continent": "Āzija",
+    "iso_a2": "BD"
+  },
+  {
+    "country": "Bruneja",
+    "continent": "Āzija",
+    "iso_a2": "BN"
+  },
+  {
+    "country": "Butāna",
+    "continent": "Āzija",
+    "iso_a2": "BT"
+  },
+  {
+    "country": "Dienvidkoreja",
+    "continent": "Āzija",
+    "iso_a2": "KR"
+  },
+  {
+    "country": "Filipīnas",
+    "continent": "Āzija",
+    "iso_a2": "PH"
+  },
+  {
+    "country": "Gruzija",
+    "continent": "Āzija",
+    "iso_a2": "GE"
+  },
+  {
+    "country": "Honkonga",
+    "continent": "Āzija",
+    "iso_a2": "HK"
+  },
+  {
+    "country": "Indija",
+    "continent": "Āzija",
+    "iso_a2": "IN"
+  },
+  {
+    "country": "Indonēzija",
+    "continent": "Āzija",
+    "iso_a2": "ID"
+  },
+  {
+    "country": "Irāka",
+    "continent": "Āzija",
+    "iso_a2": "IQ"
+  },
+  {
+    "country": "Irāna",
+    "continent": "Āzija",
+    "iso_a2": "IR"
+  },
+  {
+    "country": "Izraēla",
+    "continent": "Āzija",
+    "iso_a2": "IL"
+  },
+  {
+    "country": "Japāna",
+    "continent": "Āzija",
+    "iso_a2": "JP"
+  },
+  {
+    "country": "Jemena",
+    "continent": "Āzija",
+    "iso_a2": "YE"
+  },
+  {
+    "country": "Jordānija",
+    "continent": "Āzija",
+    "iso_a2": "JO"
+  },
+  {
+    "country": "Kambodža",
+    "continent": "Āzija",
+    "iso_a2": "KH"
+  },
+  {
+    "country": "Katara",
+    "continent": "Āzija",
+    "iso_a2": "QA"
+  },
+  {
+    "country": "Kazahstāna",
+    "continent": "Āzija",
+    "iso_a2": "KZ"
+  },
+  {
+    "country": "Kipra",
+    "continent": "Āzija",
+    "iso_a2": "CY"
+  },
+  {
+    "country": "Kirgizstāna",
+    "continent": "Āzija",
+    "iso_a2": "KG"
+  },
+  {
+    "country": "Kuveita",
+    "continent": "Āzija",
+    "iso_a2": "KW"
+  },
+  {
+    "country": "Ķīna",
+    "continent": "Āzija",
+    "iso_a2": "CN"
+  },
+  {
+    "country": "Laosa",
+    "continent": "Āzija",
+    "iso_a2": "LA"
+  },
+  {
+    "country": "Libāna",
+    "continent": "Āzija",
+    "iso_a2": "LB"
+  },
+  {
+    "country": "Makao",
+    "continent": "Āzija",
+    "iso_a2": "MO"
+  },
+  {
+    "country": "Malaizija",
+    "continent": "Āzija",
+    "iso_a2": "MY"
+  },
+  {
+    "country": "Mjanma",
+    "continent": "Āzija",
+    "iso_a2": "MM"
+  },
+  {
+    "country": "Mongolija",
+    "continent": "Āzija",
+    "iso_a2": "MN"
+  },
+  {
+    "country": "Nepāla",
+    "continent": "Āzija",
+    "iso_a2": "NP"
+  },
+  {
+    "country": "Omāna",
+    "continent": "Āzija",
+    "iso_a2": "OM"
+  },
+  {
+    "country": "Pakistāna",
+    "continent": "Āzija",
+    "iso_a2": "PK"
+  },
+  {
+    "country": "Palestīna",
+    "continent": "Āzija",
+    "iso_a2": "PS"
+  },
+  {
+    "country": "Saudu Arābija",
+    "continent": "Āzija",
+    "iso_a2": "SA"
+  },
+  {
+    "country": "Singapūra",
+    "continent": "Āzija",
+    "iso_a2": "SG"
+  },
+  {
+    "country": "Sīrija",
+    "continent": "Āzija",
+    "iso_a2": "SY"
+  },
+  {
+    "country": "Šrilanka",
+    "continent": "Āzija",
+    "iso_a2": "LK"
+  },
+  {
+    "country": "Tadžikistāna",
+    "continent": "Āzija",
+    "iso_a2": "TJ"
+  },
+  {
+    "country": "Taizeme",
+    "continent": "Āzija",
+    "iso_a2": "TH"
+  },
+  {
+    "country": "Turcija",
+    "continent": "Āzija",
+    "iso_a2": "TR"
+  },
+  {
+    "country": "Turkmenistāna",
+    "continent": "Āzija",
+    "iso_a2": "TM"
+  },
+  {
+    "country": "Uzbekistāna",
+    "continent": "Āzija",
+    "iso_a2": "UZ"
+  },
+  {
+    "country": "Vjetnama",
+    "continent": "Āzija",
+    "iso_a2": "VN"
+  },
+  {
+    "country": "Ziemeļkoreja",
+    "continent": "Āzija",
+    "iso_a2": "KP"
+  },
+  {
+    "country": "Argentīna",
+    "continent": "Dienvidamerika",
+    "iso_a2": "AR"
+  },
+  {
+    "country": "Bolīvija",
+    "continent": "Dienvidamerika",
+    "iso_a2": "BO"
+  },
+  {
+    "country": "Brazīlija",
+    "continent": "Dienvidamerika",
+    "iso_a2": "BR"
+  },
+  {
+    "country": "Čīle",
+    "continent": "Dienvidamerika",
+    "iso_a2": "CL"
+  },
+  {
+    "country": "Ekvadora",
+    "continent": "Dienvidamerika",
+    "iso_a2": "EC"
+  },
+  {
+    "country": "Folklenda Salas",
+    "continent": "Dienvidamerika",
+    "iso_a2": "FK"
+  },
+  {
+    "country": "Gajāna",
+    "continent": "Dienvidamerika",
+    "iso_a2": "GY"
+  },
+  {
+    "country": "Kolumbija",
+    "continent": "Dienvidamerika",
+    "iso_a2": "CO"
+  },
+  {
+    "country": "Paragvaja",
+    "continent": "Dienvidamerika",
+    "iso_a2": "PY"
+  },
+  {
+    "country": "Peru",
+    "continent": "Dienvidamerika",
+    "iso_a2": "PE"
+  },
+  {
+    "country": "Surinama",
+    "continent": "Dienvidamerika",
+    "iso_a2": "SR"
+  },
+  {
+    "country": "Urugvaja",
+    "continent": "Dienvidamerika",
+    "iso_a2": "UY"
+  },
+  {
+    "country": "Venecuēla",
+    "continent": "Dienvidamerika",
+    "iso_a2": "VE"
+  },
+  {
+    "country": "Albānija",
+    "continent": "Eiropa",
+    "iso_a2": "AL"
+  },
+  {
+    "country": "Andora",
+    "continent": "Eiropa",
+    "iso_a2": "AD"
+  },
+  {
+    "country": "Apvienotā Karaliste",
+    "continent": "Eiropa",
+    "iso_a2": "GB"
+  },
+  {
+    "country": "Austrija",
+    "continent": "Eiropa",
+    "iso_a2": "AT"
+  },
+  {
+    "country": "Baltkrievija",
+    "continent": "Eiropa",
+    "iso_a2": "BY"
+  },
+  {
+    "country": "Beļģija",
+    "continent": "Eiropa",
+    "iso_a2": "BE"
+  },
+  {
+    "country": "Bosnija un Hercegovina",
+    "continent": "Eiropa",
+    "iso_a2": "BA"
+  },
+  {
+    "country": "Bulgārija",
+    "continent": "Eiropa",
+    "iso_a2": "BG"
+  },
+  {
+    "country": "Čehija",
+    "continent": "Eiropa",
+    "iso_a2": "CZ"
+  },
+  {
+    "country": "Dānija",
+    "continent": "Eiropa",
+    "iso_a2": "DK"
+  },
+  {
+    "country": "Džērsija",
+    "continent": "Eiropa",
+    "iso_a2": "JE"
+  },
+  {
+    "country": "Fēru Salas",
+    "continent": "Eiropa",
+    "iso_a2": "FO"
+  },
+  {
+    "country": "Gērnsija",
+    "continent": "Eiropa",
+    "iso_a2": "GG"
+  },
+  {
+    "country": "Grieķija",
+    "continent": "Eiropa",
+    "iso_a2": "GR"
+  },
+  {
+    "country": "Horvātija",
+    "continent": "Eiropa",
+    "iso_a2": "HR"
+  },
+  {
+    "country": "Igaunija",
+    "continent": "Eiropa",
+    "iso_a2": "EE"
+  },
+  {
+    "country": "Islande",
+    "continent": "Eiropa",
+    "iso_a2": "IS"
+  },
+  {
+    "country": "Itālija",
+    "continent": "Eiropa",
+    "iso_a2": "IT"
+  },
+  {
+    "country": "Īrija",
+    "continent": "Eiropa",
+    "iso_a2": "IE"
+  },
+  {
+    "country": "Krievija",
+    "continent": "Eiropa",
+    "iso_a2": "RU"
+  },
+  {
+    "country": "Latvija",
+    "continent": "Eiropa",
+    "iso_a2": "LV"
+  },
+  {
+    "country": "Lietuva",
+    "continent": "Eiropa",
+    "iso_a2": "LT"
+  },
+  {
+    "country": "Lihtenšteina",
+    "continent": "Eiropa",
+    "iso_a2": "LI"
+  },
+  {
+    "country": "Luksemburga",
+    "continent": "Eiropa",
+    "iso_a2": "LU"
+  },
+  {
+    "country": "Malta",
+    "continent": "Eiropa",
+    "iso_a2": "MT"
+  },
+  {
+    "country": "Melnkalne",
+    "continent": "Eiropa",
+    "iso_a2": "ME"
+  },
+  {
+    "country": "Menas Sala",
+    "continent": "Eiropa",
+    "iso_a2": "IM"
+  },
+  {
+    "country": "Moldova",
+    "continent": "Eiropa",
+    "iso_a2": "MD"
+  },
+  {
+    "country": "Monako",
+    "continent": "Eiropa",
+    "iso_a2": "MC"
+  },
+  {
+    "country": "Nīderlande",
+    "continent": "Eiropa",
+    "iso_a2": "NL"
+  },
+  {
+    "country": "Olandes Salas",
+    "continent": "Eiropa",
+    "iso_a2": "AX"
+  },
+  {
+    "country": "Polija",
+    "continent": "Eiropa",
+    "iso_a2": "PL"
+  },
+  {
+    "country": "Portugāle",
+    "continent": "Eiropa",
+    "iso_a2": "PT"
+  },
+  {
+    "country": "Rumānija",
+    "continent": "Eiropa",
+    "iso_a2": "RO"
+  },
+  {
+    "country": "Sanmarīno",
+    "continent": "Eiropa",
+    "iso_a2": "SM"
+  },
+  {
+    "country": "Serbija",
+    "continent": "Eiropa",
+    "iso_a2": "RS"
+  },
+  {
+    "country": "Slovākija",
+    "continent": "Eiropa",
+    "iso_a2": "SK"
+  },
+  {
+    "country": "Slovēnija",
+    "continent": "Eiropa",
+    "iso_a2": "SI"
+  },
+  {
+    "country": "Somija",
+    "continent": "Eiropa",
+    "iso_a2": "FI"
+  },
+  {
+    "country": "Spānija",
+    "continent": "Eiropa",
+    "iso_a2": "ES"
+  },
+  {
+    "country": "Šveice",
+    "continent": "Eiropa",
+    "iso_a2": "CH"
+  },
+  {
+    "country": "Ukraina",
+    "continent": "Eiropa",
+    "iso_a2": "UA"
+  },
+  {
+    "country": "Ungārija",
+    "continent": "Eiropa",
+    "iso_a2": "HU"
+  },
+  {
+    "country": "Vatikāns",
+    "continent": "Eiropa",
+    "iso_a2": "VA"
+  },
+  {
+    "country": "Vācija",
+    "continent": "Eiropa",
+    "iso_a2": "DE"
+  },
+  {
+    "country": "Ziemeļmaķedonija",
+    "continent": "Eiropa",
+    "iso_a2": "MK"
+  },
+  {
+    "country": "Zviedrija",
+    "continent": "Eiropa",
+    "iso_a2": "SE"
+  },
+  {
+    "country": "Dienviddžordžija un Dienvidsendviču Salas",
+    "continent": "Okeāni",
+    "iso_a2": "GS"
+  },
+  {
+    "country": "Francijas dienvidu un antarktiskie apgabali",
+    "continent": "Okeāni",
+    "iso_a2": "TF"
+  },
+  {
+    "country": "Hērda Sala un Makdonalda Salas",
+    "continent": "Okeāni",
+    "iso_a2": "HM"
+  },
+  {
+    "country": "Indijas okeāna Britu teritorija",
+    "continent": "Okeāni",
+    "iso_a2": "IO"
+  },
+  {
+    "country": "Maldīvija",
+    "continent": "Okeāni",
+    "iso_a2": "MV"
+  },
+  {
+    "country": "Maurīcija",
+    "continent": "Okeāni",
+    "iso_a2": "MU"
+  },
+  {
+    "country": "Seišelu salas",
+    "continent": "Okeāni",
+    "iso_a2": "SC"
+  },
+  {
+    "country": "Sv. Helēnas Sala",
+    "continent": "Okeāni",
+    "iso_a2": "SH"
+  },
+  {
+    "country": "Amerikāņu Samoa",
+    "continent": "Okeānija",
+    "iso_a2": "AS"
+  },
+  {
+    "country": "Austrālija",
+    "continent": "Okeānija",
+    "iso_a2": "AU"
+  },
+  {
+    "country": "Fidži",
+    "continent": "Okeānija",
+    "iso_a2": "FJ"
+  },
+  {
+    "country": "Franču Polinēzija",
+    "continent": "Okeānija",
+    "iso_a2": "PF"
+  },
+  {
+    "country": "Guama",
+    "continent": "Okeānija",
+    "iso_a2": "GU"
+  },
+  {
+    "country": "Jaunkaledonija",
+    "continent": "Okeānija",
+    "iso_a2": "NC"
+  },
+  {
+    "country": "Jaunzēlande",
+    "continent": "Okeānija",
+    "iso_a2": "NZ"
+  },
+  {
+    "country": "Kiribati",
+    "continent": "Okeānija",
+    "iso_a2": "KI"
+  },
+  {
+    "country": "Kuka Salas",
+    "continent": "Okeānija",
+    "iso_a2": "CK"
+  },
+  {
+    "country": "Māršala Salas",
+    "continent": "Okeānija",
+    "iso_a2": "MH"
+  },
+  {
+    "country": "Mikronēzijas Federatīvās Valstis",
+    "continent": "Okeānija",
+    "iso_a2": "FM"
+  },
+  {
+    "country": "Nauru",
+    "continent": "Okeānija",
+    "iso_a2": "NR"
+  },
+  {
+    "country": "Niue",
+    "continent": "Okeānija",
+    "iso_a2": "NU"
+  },
+  {
+    "country": "Norfolkas Sala",
+    "continent": "Okeānija",
+    "iso_a2": "NF"
+  },
+  {
+    "country": "Palau",
+    "continent": "Okeānija",
+    "iso_a2": "PW"
+  },
+  {
+    "country": "Papua-Jaungvineja",
+    "continent": "Okeānija",
+    "iso_a2": "PG"
+  },
+  {
+    "country": "Pitkērnas Salas",
+    "continent": "Okeānija",
+    "iso_a2": "PN"
+  },
+  {
+    "country": "Samoa",
+    "continent": "Okeānija",
+    "iso_a2": "WS"
+  },
+  {
+    "country": "Tonga",
+    "continent": "Okeānija",
+    "iso_a2": "TO"
+  },
+  {
+    "country": "Tuvalu",
+    "continent": "Okeānija",
+    "iso_a2": "TV"
+  },
+  {
+    "country": "Vanuatu",
+    "continent": "Okeānija",
+    "iso_a2": "VU"
+  },
+  {
+    "country": "Volisa un Futuna",
+    "continent": "Okeānija",
+    "iso_a2": "WF"
+  },
+  {
+    "country": "Zālamana Salas",
+    "continent": "Okeānija",
+    "iso_a2": "SB"
+  },
+  {
+    "country": "Ziemeļu Marianas Salas",
+    "continent": "Okeānija",
+    "iso_a2": "MP"
+  },
+  {
+    "country": "Amerikas Savienotās Valstis",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "US"
+  },
+  {
+    "country": "Angilja",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "AI"
+  },
+  {
+    "country": "Antigva un Barbuda",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "AG"
+  },
+  {
+    "country": "Aruba",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "AW"
+  },
+  {
+    "country": "ASV Virdžīnu Salas",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "VI"
+  },
+  {
+    "country": "Bahamu Salas",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "BS"
+  },
+  {
+    "country": "Barbadosa",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "BB"
+  },
+  {
+    "country": "Beliza",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "BZ"
+  },
+  {
+    "country": "Bermudu Salas",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "BM"
+  },
+  {
+    "country": "Britu Virdžīnu Salas",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "VG"
+  },
+  {
+    "country": "Dominika",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "DM"
+  },
+  {
+    "country": "Dominikānas Republika",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "DO"
+  },
+  {
+    "country": "Grenāda",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "GD"
+  },
+  {
+    "country": "Grenlande",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "GL"
+  },
+  {
+    "country": "Gvatemala",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "GT"
+  },
+  {
+    "country": "Haiti",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "HT"
+  },
+  {
+    "country": "Hondurasa",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "HN"
+  },
+  {
+    "country": "Jamaika",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "JM"
+  },
+  {
+    "country": "Kaimanu Salas",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "KY"
+  },
+  {
+    "country": "Kanāda",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "CA"
+  },
+  {
+    "country": "Kirasao",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "CW"
+  },
+  {
+    "country": "Kostarika",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "CR"
+  },
+  {
+    "country": "Kuba",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "CU"
+  },
+  {
+    "country": "Meksika",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "MX"
+  },
+  {
+    "country": "Montserrata",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "MS"
+  },
+  {
+    "country": "Nikaragva",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "NI"
+  },
+  {
+    "country": "Panama",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "PA"
+  },
+  {
+    "country": "Puerto Rico",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "PR"
+  },
+  {
+    "country": "Salvadora",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "SV"
+  },
+  {
+    "country": "Senbartelmī",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "BL"
+  },
+  {
+    "country": "Senmartēna",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "MF"
+  },
+  {
+    "country": "Senpjēra un Mikelona",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "PM"
+  },
+  {
+    "country": "Sentkitsa un Nevisa",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "KN"
+  },
+  {
+    "country": "Sentlūsija",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "LC"
+  },
+  {
+    "country": "Sentvinsenta un Grenadīnas",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "VC"
+  },
+  {
+    "country": "Sintmārtena",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "SX"
+  },
+  {
+    "country": "Tērksas un Kaikosas Salas",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "TC"
+  },
+  {
+    "country": "Trinidāda un Tobāgo",
+    "continent": "Ziemeļamerika",
+    "iso_a2": "TT"
+  }
 ]

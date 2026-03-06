@@ -10,7 +10,7 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=12" />
+  <link rel="stylesheet" href="css/styles.css?v=27" />
 </head>
 <body>
 
@@ -22,7 +22,18 @@
 </div>
 
 <div id="app">
-  <aside id="sidebar">
+  <!-- Mobile tab navigation (hidden on desktop) -->
+  <nav id="mobile-tabs" class="mobile-tabs">
+    <button class="mobile-tab active" data-tab="list" type="button">
+      📋 Saraksts
+      <span id="mobile-count-badge" class="mobile-count-badge">0</span>
+    </button>
+    <button class="mobile-tab" data-tab="map" type="button">
+      🗺️ Karte
+    </button>
+  </nav>
+
+  <aside id="sidebar" class="tab-content active" data-content="list">
     <div class="sidebar-header">
       <div class="sidebar-title-row">
         <h1 class="sidebar-title">
@@ -33,6 +44,9 @@
         <button id="openFilters" class="filters-open-btn" type="button" aria-haspopup="dialog" aria-controls="filtersModal">
           Filtri
         </button>
+        <button id="themeToggle" class="theme-toggle-btn" type="button" title="Pārslēgt tēmu">
+          🌙
+        </button>
       </div>
 
       <label class="search-row">
@@ -42,11 +56,20 @@
     </div>
 
     <div id="list-title">Objekti</div>
-    <div id="objects-list"></div>
+    <div id="objects-list">
+      <div id="pull-to-refresh-indicator" class="pull-to-refresh-indicator">
+        <div class="pull-to-refresh-spinner"></div>
+        <span>Atjaunot...</span>
+      </div>
+    </div>
     <div id="sidebar-version">v<span id="version-number">...</span></div>
+
+    <footer id="footer">
+      <a href="https://forms.gle/JcUwCwtvCwwk2Yxr7" target="_blank" rel="noopener noreferrer">➕ Forma</a>
+    </footer>
   </aside>
 
-  <div id="map"></div>
+  <div id="map" class="tab-content" data-content="map"></div>
 </div>
 
 <div id="filtersModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
@@ -95,11 +118,41 @@
   </div>
 </div>
 
-<footer id="footer">
-  <a href="https://forms.gle/JcUwCwtvCwwk2Yxr7" target="_blank" rel="noopener noreferrer">➕ Forma</a>
-</footer>
+<script>
+// Register service worker for offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then((registration) => {
+        console.log('[SW] Registered:', registration.scope);
 
-<script src="config.php?v=25"></script>
-<script src="js/app.js?v=25"></script>
+        // Check for updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // New service worker available, prompt user to refresh
+              if (confirm('Jauna versija ir pieejama! Vai vēlaties atjaunināt?')) {
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                window.location.reload();
+              }
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.error('[SW] Registration failed:', error);
+      });
+
+    // Reload page when new service worker takes control
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  });
+}
+</script>
+
+<script src="config.php?v=27"></script>
+<script src="js/app.js?v=27"></script>
 </body>
 </html>

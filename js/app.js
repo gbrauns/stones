@@ -18,6 +18,10 @@ let allFeatures = [];
 let filteredFeatures = [];
 let activePopup = null;
 
+// Lazy loading state
+let displayedItemsCount = 50;
+const ITEMS_PER_PAGE = 50;
+
 let registryPairs = [];
 let countryToContinent = new Map();
 let continentToCountries = new Map();
@@ -35,6 +39,7 @@ let highlightedCountryIso = null; // Pašlaik highlighted valsts (popup atvērts
 const els = {
   loader: document.getElementById('loader'),
   totalCount: document.getElementById('total-count'),
+  mobileCountBadge: document.getElementById('mobile-count-badge'),
   objectsList: document.getElementById('objects-list'),
   search: document.getElementById('filter-search'),
 
@@ -50,7 +55,15 @@ const els = {
   continent: document.getElementById('filter-continent'),
   country: document.getElementById('filter-country'),
 
-  versionNumber: document.getElementById('version-number')
+  versionNumber: document.getElementById('version-number'),
+
+  // Mobile tabs
+  mobileTabs: document.getElementById('mobile-tabs'),
+  sidebar: document.getElementById('sidebar'),
+  mapContainer: document.getElementById('map'),
+
+  // Pull to refresh
+  pullToRefreshIndicator: document.getElementById('pull-to-refresh-indicator')
 };
 
 const map = new mapboxgl.Map({
@@ -62,6 +75,9 @@ const map = new mapboxgl.Map({
 
 map.on('load', async () => {
   initModal();
+  initMobileTabs();
+  initPullToRefresh();
+  initDarkMode();
   loadVersion();
 
   const [registryRes, dataRes] = await Promise.all([
@@ -271,6 +287,240 @@ function initModal() {
       closeModal();
     }
   });
+
+  // Swipe-to-close for mobile
+  initModalSwipe();
+}
+
+function initDarkMode() {
+  const toggle = document.getElementById('themeToggle');
+  if (!toggle) return;
+
+  // Check for saved theme preference or default to system preference
+  const savedTheme = localStorage.getItem('theme');
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+
+  document.documentElement.setAttribute('data-theme', theme);
+  toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+
+  // Update Mapbox style
+  if (theme === 'dark') {
+    map.setStyle('mapbox://styles/mapbox/dark-v11');
+  }
+
+  toggle.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    toggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+
+    // Update Mapbox style
+    map.setStyle(newTheme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11');
+
+    // Haptic feedback
+    if (window.navigator.vibrate) {
+      window.navigator.vibrate(10);
+    }
+  });
+
+  // Listen for system theme changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem('theme')) {
+      const newTheme = e.matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      toggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+      map.setStyle(newTheme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11');
+    }
+  });
+}
+
+function initModalSwipe() {
+  const sheet = document.querySelector('.modal-sheet');
+  if (!sheet) return;
+
+  let startY = 0;
+  let currentY = 0;
+  let isDragging = false;
+
+  const onTouchStart = (e) => {
+    if (!els.modal.classList.contains('is-open')) return;
+
+    const touch = e.touches[0];
+    startY = touch.clientY;
+    currentY = startY;
+    isDragging = true;
+    sheet.classList.add('swiping');
+  };
+
+  const onTouchMove = (e) => {
+    if (!isDragging) return;
+
+    const touch = e.touches[0];
+    currentY = touch.clientY;
+    const deltaY = currentY - startY;
+
+    // Only allow downward swipes
+    if (deltaY > 0) {
+      e.preventDefault();
+      sheet.style.transform = `translateX(-50%) translateY(${deltaY}px)`;
+    }
+  };
+
+  const onTouchEnd = () => {
+    if (!isDragging) return;
+
+    const deltaY = currentY - startY;
+    sheet.classList.remove('swiping');
+
+    // If swiped down more than 100px, close modal
+    if (deltaY > 100) {
+      closeModal();
+
+      // Haptic feedback
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(15);
+      }
+    }
+
+    // Reset transform
+    sheet.style.transform = 'translateX(-50%)';
+    isDragging = false;
+  };
+
+  sheet.addEventListener('touchstart', onTouchStart, { passive: false });
+  sheet.addEventListener('touchmove', onTouchMove, { passive: false });
+  sheet.addEventListener('touchend', onTouchEnd);
+  sheet.addEventListener('touchcancel', onTouchEnd);
+}
+
+function initMobileTabs() {
+  if (!els.mobileTabs) return;
+
+  const tabs = els.mobileTabs.querySelectorAll('.mobile-tab');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetTab = tab.dataset.tab;
+
+      // Update active tab
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      // Switch content
+      if (targetTab === 'list') {
+        els.sidebar.classList.add('active');
+        els.mapContainer.classList.remove('active');
+      } else if (targetTab === 'map') {
+        els.sidebar.classList.remove('active');
+        els.mapContainer.classList.add('active');
+        // Resize map when switching to it
+        setTimeout(() => map.resize(), 100);
+      }
+
+      // Haptic feedback (if supported)
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  });
+}
+
+function initPullToRefresh() {
+  if (!els.objectsList || !els.pullToRefreshIndicator) return;
+
+  let startY = 0;
+  let isPulling = false;
+  let isRefreshing = false;
+
+  els.objectsList.addEventListener('touchstart', (e) => {
+    if (els.objectsList.scrollTop === 0) {
+      startY = e.touches[0].clientY;
+      isPulling = true;
+    }
+  });
+
+  els.objectsList.addEventListener('touchmove', (e) => {
+    if (!isPulling || isRefreshing) return;
+
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - startY;
+
+    if (diff > 0 && els.objectsList.scrollTop === 0) {
+      e.preventDefault();
+      const pullDistance = Math.min(diff, 100);
+
+      if (pullDistance > 60) {
+        els.pullToRefreshIndicator.classList.add('visible');
+      }
+    }
+  });
+
+  els.objectsList.addEventListener('touchend', async () => {
+    if (!isPulling || isRefreshing) return;
+
+    if (els.pullToRefreshIndicator.classList.contains('visible')) {
+      isRefreshing = true;
+
+      // Haptic feedback
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(20);
+      }
+
+      // Reload data
+      try {
+        const dataRes = await fetch(DATA_URL);
+        if (dataRes.ok) {
+          const geojson = await dataRes.json();
+
+          allFeatures = (geojson.features || []).map((f, i) => {
+            if (!f.properties) f.properties = {};
+            const uidBase = (f.properties.id || f.properties.title) ? String(f.properties.id || f.properties.title) : `row_${i}`;
+            f.__uid = `${uidBase}__${i}`;
+            f.__index = i;
+            f.properties.__index = i;
+            f.properties.missing_info = normalizeBoolean(f.properties.missing_info);
+            if (typeof f.properties.country === 'string') f.properties.country = f.properties.country.trim();
+            if (typeof f.properties.photos === 'string') {
+              f.properties.photos = normalizePhotoField(f.properties.photos);
+            } else if (Array.isArray(f.properties.photos)) {
+              f.properties.photos = f.properties.photos.map(normalizePhotoUrl);
+            }
+            if (typeof f.properties.videos === 'string') {
+              f.properties.videos = normalizePhotoField(f.properties.videos);
+            } else if (Array.isArray(f.properties.videos)) {
+              f.properties.videos = f.properties.videos.map(normalizePhotoUrl);
+            }
+            return f;
+          });
+
+          updateTotalCountBadge(allFeatures.length);
+          computeContinentStats();
+          applyFilters();
+
+          // Update map source
+          map.getSource('stones').setData({
+            type: 'FeatureCollection',
+            features: allFeatures
+          });
+        }
+      } catch (err) {
+        console.error('[Pull-to-refresh] Error:', err);
+      }
+
+      // Hide indicator after delay
+      setTimeout(() => {
+        els.pullToRefreshIndicator.classList.remove('visible');
+        isRefreshing = false;
+      }, 500);
+    } else {
+      els.pullToRefreshIndicator.classList.remove('visible');
+    }
+
+    isPulling = false;
+  });
 }
 
 function openModal() {
@@ -438,52 +688,63 @@ function populateCountryFilter(continent) {
 function applyFilters() {
   if (!map.getSource('stones')) return;
 
-  const author = els.author.value;
-  const year = els.year.value;
-  const continent = els.continent.value;
-  const country = els.country.value;
-  const q = String(els.search.value || '').trim().toLowerCase();
+  // Show skeleton loaders
+  showSkeletonLoaders();
 
-  filteredFeatures = allFeatures.filter(f => {
-    const p = f.properties || {};
+  // Use setTimeout to show loading state
+  setTimeout(() => {
+    const author = els.author.value;
+    const year = els.year.value;
+    const continent = els.continent.value;
+    const country = els.country.value;
+    const q = String(els.search.value || '').trim().toLowerCase();
 
-    if (author && p.author !== author) return false;
-    if (year && (!p.date || !String(p.date).startsWith(year))) return false;
+    filteredFeatures = allFeatures.filter(f => {
+      const p = f.properties || {};
 
-    const featureCountry = String(p.country || '').trim();
+      if (author && p.author !== author) return false;
+      if (year && (!p.date || !String(p.date).startsWith(year))) return false;
 
-    if (country) {
-      if (featureCountry !== country) return false;
-    } else if (continent) {
-      if (continent === UNKNOWN_CONTINENT_VALUE) {
-        const featureContinent = countryToContinent.get(featureCountry);
-        if (featureContinent) return false;
-      } else {
-        const featureContinent = countryToContinent.get(featureCountry);
-        if (featureContinent !== continent) return false;
+      const featureCountry = String(p.country || '').trim();
+
+      if (country) {
+        if (featureCountry !== country) return false;
+      } else if (continent) {
+        if (continent === UNKNOWN_CONTINENT_VALUE) {
+          const featureContinent = countryToContinent.get(featureCountry);
+          if (featureContinent) return false;
+        } else {
+          const featureContinent = countryToContinent.get(featureCountry);
+          if (featureContinent !== continent) return false;
+        }
       }
-    }
 
-    if (q) {
-      const hay = `${p.title || ''} ${p.author || ''} ${p.description || ''} ${p.country || ''}`.toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
+      if (q) {
+        const hay = `${p.title || ''} ${p.author || ''} ${p.description || ''} ${p.country || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
 
-    return true;
-  });
+      return true;
+    });
 
-  map.getSource('stones').setData({
-    type: 'FeatureCollection',
-    features: filteredFeatures
-  });
+    map.getSource('stones').setData({
+      type: 'FeatureCollection',
+      features: filteredFeatures
+    });
 
-  renderObjectsList();
-  updateFilteredCountries();
+    renderObjectsList();
+    updateFilteredCountries();
+  }, 100);
 }
 
 function updateTotalCountBadge(n) {
-  if (!els.totalCount) return;
-  els.totalCount.textContent = String(Number(n) || 0);
+  const count = String(Number(n) || 0);
+  if (els.totalCount) {
+    els.totalCount.textContent = count;
+  }
+  if (els.mobileCountBadge) {
+    els.mobileCountBadge.textContent = count;
+  }
 }
 
 function computeContinentStats() {
@@ -751,9 +1012,45 @@ function updateFilteredCountries() {
   });
 }
 
-function renderObjectsList() {
+function showSkeletonLoaders(count = 5) {
   const box = els.objectsList;
   box.innerHTML = '';
+  box.classList.add('list-loading');
+
+  for (let i = 0; i < count; i++) {
+    const item = document.createElement('div');
+    item.className = 'skeleton-item';
+
+    const dot = document.createElement('div');
+    dot.className = 'skeleton-dot skeleton';
+
+    const main = document.createElement('div');
+    main.className = 'skeleton-main';
+
+    const title = document.createElement('div');
+    title.className = 'skeleton-title skeleton';
+
+    const sub = document.createElement('div');
+    sub.className = 'skeleton-sub skeleton';
+
+    main.appendChild(title);
+    main.appendChild(sub);
+
+    item.appendChild(dot);
+    item.appendChild(main);
+
+    box.appendChild(item);
+  }
+}
+
+function renderObjectsList(reset = true) {
+  const box = els.objectsList;
+  box.classList.remove('list-loading');
+
+  if (reset) {
+    box.innerHTML = '';
+    displayedItemsCount = ITEMS_PER_PAGE;
+  }
 
   if (!filteredFeatures.length) {
     const empty = document.createElement('div');
@@ -771,7 +1068,21 @@ function renderObjectsList() {
     return ta.localeCompare(tb, 'lv');
   });
 
-  sorted.forEach((f) => {
+  // Remove existing load more button if present
+  const existingLoadMore = box.querySelector('.load-more-btn');
+  if (existingLoadMore) {
+    existingLoadMore.remove();
+  }
+
+  // Render items up to displayedItemsCount
+  const itemsToRender = sorted.slice(0, displayedItemsCount);
+
+  itemsToRender.forEach((f) => {
+    // Skip if already rendered
+    if (box.querySelector(`[data-uid="${f.__uid}"]`)) {
+      return;
+    }
+
     const p = f.properties || {};
     const missing = normalizeBoolean(p.missing_info);
 
@@ -809,10 +1120,40 @@ function renderObjectsList() {
       setTimeout(() => {
         openFeaturePopup(f, coords);
       }, 250);
+
+      // Haptic feedback
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
     });
 
     box.appendChild(item);
   });
+
+  // Add load more button if there are more items
+  if (displayedItemsCount < sorted.length) {
+    const loadMoreBtn = document.createElement('button');
+    loadMoreBtn.className = 'load-more-btn';
+    loadMoreBtn.textContent = `Ielādēt vairāk (${Math.min(ITEMS_PER_PAGE, sorted.length - displayedItemsCount)} no ${sorted.length - displayedItemsCount})`;
+    loadMoreBtn.type = 'button';
+
+    loadMoreBtn.addEventListener('click', () => {
+      loadMoreBtn.classList.add('loading');
+      loadMoreBtn.textContent = 'Ielādē...';
+
+      setTimeout(() => {
+        displayedItemsCount += ITEMS_PER_PAGE;
+        renderObjectsList(false);
+
+        // Haptic feedback
+        if (window.navigator.vibrate) {
+          window.navigator.vibrate(10);
+        }
+      }, 200);
+    });
+
+    box.appendChild(loadMoreBtn);
+  }
 }
 
 function slugify(text) {
@@ -963,6 +1304,7 @@ function openFeaturePopup(feature, lngLat) {
       <div class="popup-title">
         <span>${titleText}</span>
         <div class="popup-title-actions">
+          <button class="back-to-list-btn" type="button" title="Atgriezties uz sarakstu">📋</button>
           <button class="copy-link-btn" type="button" title="Kopēt linku">🔗</button>
           ${badge}
         </div>
@@ -1005,8 +1347,48 @@ function openFeaturePopup(feature, lngLat) {
     setupSlideshow(popupId, media);
   }
 
-  // Copy link funkcionalitāte
+  // Copy link un back to list funkcionalitāte
   setTimeout(() => {
+    // Back to list button
+    const backBtn = document.querySelector('.back-to-list-btn');
+    if (backBtn) {
+      backBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+
+        // Switch to list tab on mobile
+        if (els.mobileTabs) {
+          const tabs = els.mobileTabs.querySelectorAll('.mobile-tab');
+          tabs.forEach(tab => {
+            if (tab.dataset.tab === 'list') {
+              tab.click();
+            }
+          });
+        }
+
+        // Scroll to item in list
+        const uid = feature.__uid;
+        if (uid) {
+          setTimeout(() => {
+            const item = document.querySelector(`[data-uid="${uid}"]`);
+            if (item) {
+              item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // Highlight effect
+              item.style.background = '#e3f2fd';
+              setTimeout(() => {
+                item.style.background = '';
+              }, 1500);
+            }
+          }, 300);
+        }
+
+        // Haptic feedback
+        if (window.navigator.vibrate) {
+          window.navigator.vibrate(10);
+        }
+      });
+    }
+
+    // Copy link button
     const copyBtn = document.querySelector('.copy-link-btn');
     if (copyBtn) {
       copyBtn.addEventListener('click', (e) => {
@@ -1019,6 +1401,11 @@ function openFeaturePopup(feature, lngLat) {
             copyBtn.textContent = '🔗';
             copyBtn.style.color = '';
           }, 1500);
+
+          // Haptic feedback
+          if (window.navigator.vibrate) {
+            window.navigator.vibrate(10);
+          }
         }).catch(() => {
           // Fallback ja clipboard nedarbojas
           copyBtn.textContent = '✗';
