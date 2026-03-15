@@ -948,6 +948,134 @@ html, body {
   flex: 1;
 }
 
+/* Mobile sheet backdrop */
+.mobile-sheet-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1400;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.mobile-sheet-backdrop.active {
+  display: block;
+  opacity: 1;
+}
+
+/* Mobile bottom sheet for object details */
+.mobile-sheet {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 20px var(--shadow-lg);
+  z-index: 1500;
+  max-height: 85vh;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.mobile-sheet.active {
+  display: flex;
+  flex-direction: column;
+  transform: translateY(0);
+}
+
+.mobile-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+  margin: 12px auto 8px;
+  cursor: grab;
+}
+
+.mobile-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.mobile-sheet-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  flex: 1;
+  padding-right: 12px;
+  line-height: 1.3;
+}
+
+.mobile-sheet-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Object detail content in mobile sheet */
+.mobile-detail-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.mobile-detail-chip {
+  font-size: 13px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 6px 12px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.mobile-detail-gallery {
+  margin-bottom: 16px;
+}
+
+.mobile-detail-desc {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.mobile-detail-actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+}
+
+.mobile-detail-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.mobile-detail-btn:active {
+  transform: scale(0.98);
+}
+
 /* Responsive */
 @media (max-width: 860px) {
   #sidebar { width: 320px; }

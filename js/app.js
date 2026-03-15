@@ -65,10 +65,18 @@ const els = {
   // Mobile controls
   mobileListBtn: document.getElementById('mobileListBtn'),
   mobileFiltersBtn: document.getElementById('mobileFiltersBtn'),
+  mobileThemeToggle: document.getElementById('mobileThemeToggle'),
   mobileTotalCount: document.getElementById('mobile-total-count'),
   mobileZoomIn: document.getElementById('mobileZoomIn'),
   mobileZoomOut: document.getElementById('mobileZoomOut'),
   mobileVersion: document.getElementById('mobile-version-number'),
+
+  // Mobile object detail sheet
+  mobileSheetBackdrop: document.getElementById('mobileSheetBackdrop'),
+  mobileObjectSheet: document.getElementById('mobileObjectSheet'),
+  closeMobileSheet: document.getElementById('closeMobileSheet'),
+  mobileSheetTitle: document.getElementById('mobileSheetTitle'),
+  mobileSheetContent: document.getElementById('mobileSheetContent'),
 
   // Mobile overlays
   mobileListOverlay: document.getElementById('mobileListOverlay'),
@@ -103,7 +111,7 @@ map.on('load', async () => {
   loadVersion();
 
   const [registryRes, dataRes] = await Promise.all([
-    fetch(REGISTRY_URL, { cache: 'force-cache' }).catch(() => null),
+    fetch(REGISTRY_URL, { cache: 'default' }).catch(() => null),
     fetch(DATA_URL).catch(() => null)
   ]);
 
@@ -708,7 +716,302 @@ function initMobileControls() {
     });
   }
 
+  // Mobile theme toggle
+  if (els.mobileThemeToggle) {
+    els.mobileThemeToggle.addEventListener('click', () => {
+      console.log('[Mobile] Toggling theme');
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      els.mobileThemeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+
+      // Update desktop toggle too
+      const desktopToggle = document.getElementById('themeToggle');
+      if (desktopToggle) {
+        desktopToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+      }
+
+      // Update Mapbox style and reload layers
+      const newStyle = newTheme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11';
+      map.setStyle(newStyle);
+
+      map.once('style.load', () => {
+        console.log('[Mobile Theme] Style loaded, re-adding layers');
+        reloadMapLayers();
+      });
+
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+
+    // Sync initial theme with desktop
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    els.mobileThemeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+  }
+
+  // Close mobile object sheet
+  if (els.closeMobileSheet) {
+    els.closeMobileSheet.addEventListener('click', () => {
+      console.log('[Mobile] Closing object sheet');
+      closeMobileSheet();
+
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  }
+
+  // Mobile sheet swipe down to close
+  if (els.mobileObjectSheet) {
+    initMobileSheetSwipe();
+  }
+
+  // Click backdrop to close sheet
+  if (els.mobileSheetBackdrop) {
+    els.mobileSheetBackdrop.addEventListener('click', () => {
+      closeMobileSheet();
+    });
+  }
+
   console.log('[Mobile Controls] Initialized');
+}
+
+function isMobileView() {
+  return window.innerWidth <= 720;
+}
+
+// Global function for copying to clipboard (used in mobile sheet)
+window.copyToClipboard = function(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Saite nokopēta! 🔗');
+  }).catch(() => {
+    alert('Neizdevās nokopēt saiti');
+  });
+};
+
+function buildSlideshow(media) {
+  const popupId = `mobile_sl_${Date.now()}`;
+
+  let html = `
+    <div class="slideshow" id="${popupId}">
+      <button class="slide-nav slide-prev" type="button" aria-label="Iepriekšējais">‹</button>
+      <button class="slide-nav slide-next" type="button" aria-label="Nākamais">›</button>
+      <div class="slide-counter">1 / ${media.length}</div>
+    </div>
+  `;
+
+  // Store media data for later setup
+  window.__currentMobileSlideshow = { id: popupId, media: media };
+
+  return html;
+}
+
+function initSlideshow() {
+  if (!window.__currentMobileSlideshow) return;
+
+  const { id, media } = window.__currentMobileSlideshow;
+  setupSlideshow(id, media);
+  delete window.__currentMobileSlideshow;
+}
+
+function closeMobileSheet() {
+  if (els.mobileObjectSheet) {
+    els.mobileObjectSheet.classList.remove('active');
+  }
+
+  if (els.mobileSheetBackdrop) {
+    els.mobileSheetBackdrop.classList.remove('active');
+  }
+
+  // Remove country highlight when closing sheet
+  if (highlightedCountryIso) {
+    try {
+      map.setFeatureState(
+        { source: 'countries', id: highlightedCountryIso },
+        { highlighted: false }
+      );
+    } catch (e) {}
+    highlightedCountryIso = null;
+  }
+
+  // Close any active popup too
+  if (activePopup) {
+    activePopup.remove();
+    activePopup = null;
+  }
+}
+
+function openMobileSheet(feature) {
+  if (!els.mobileObjectSheet || !els.mobileSheetTitle || !els.mobileSheetContent) return;
+
+  const p = feature.properties || {};
+  const missing = normalizeBoolean(p.missing_info);
+  const media = getMediaWithTypes(p);
+
+  // Set title
+  const title = getTitleWithCountry(p);
+  els.mobileSheetTitle.textContent = title;
+
+  // Build content
+  let html = '';
+
+  // Meta info (badges)
+  html += '<div class="mobile-detail-meta">';
+
+  // Status badge
+  if (missing) {
+    html += '<span class="mobile-detail-chip badge-missing">Trūkst info</span>';
+  } else {
+    html += '<span class="mobile-detail-chip badge-ok">Pilnīga info</span>';
+  }
+
+  // Author
+  if (p.author) {
+    html += `<span class="mobile-detail-chip">👤 ${escapeHtml(p.author)}</span>`;
+  }
+
+  // Date
+  const dateText = formatDateDDMMMYYYY(p.date);
+  if (dateText) {
+    html += `<span class="mobile-detail-chip">📅 ${dateText}</span>`;
+  }
+
+  html += '</div>';
+
+  // Gallery (photos/videos)
+  if (media.length > 0) {
+    html += '<div class="mobile-detail-gallery">';
+    html += buildSlideshow(media);
+    html += '</div>';
+  }
+
+  // Description
+  if (p.description) {
+    html += `<div class="mobile-detail-desc">${escapeHtml(p.description)}</div>`;
+  }
+
+  // Actions
+  html += '<div class="mobile-detail-actions">';
+
+  // Copy link button
+  const title2 = getDisplayTitle(p);
+  const slug = slugify(title2);
+  const uniqueSlug = feature.__index !== undefined ? `${slug}-${feature.__index}` : slug;
+  const shareUrl = `${window.location.origin}${window.location.pathname}#${uniqueSlug}`;
+
+  html += `<button class="mobile-detail-btn" onclick="copyToClipboard('${shareUrl}')">🔗 Kopēt saiti</button>`;
+  html += '</div>';
+
+  els.mobileSheetContent.innerHTML = html;
+
+  // Show backdrop and sheet
+  if (els.mobileSheetBackdrop) {
+    els.mobileSheetBackdrop.classList.add('active');
+  }
+  els.mobileObjectSheet.classList.add('active');
+
+  // Initialize slideshow if present
+  setTimeout(() => {
+    if (media.length > 0) {
+      initSlideshow();
+    }
+  }, 100);
+
+  // Highlight country
+  const countryLv = String(p.country || '').trim();
+  const iso = countryToIsoA2.get(countryLv);
+  if (iso && countriesFeatureIds.has(iso)) {
+    const isoUp = String(iso).toUpperCase();
+
+    // Remove previous highlight
+    if (highlightedCountryIso && highlightedCountryIso !== isoUp) {
+      try {
+        map.setFeatureState(
+          { source: 'countries', id: highlightedCountryIso },
+          { highlighted: false }
+        );
+      } catch (e) {}
+    }
+
+    // Add new highlight
+    try {
+      map.setFeatureState(
+        { source: 'countries', id: isoUp },
+        { highlighted: true }
+      );
+      highlightedCountryIso = isoUp;
+    } catch (e) {
+      console.warn('[Mobile Sheet] Failed to highlight country:', isoUp, e);
+    }
+  }
+}
+
+function initMobileSheetSwipe() {
+  const sheet = els.mobileObjectSheet;
+  if (!sheet) return;
+
+  let startY = 0;
+  let currentY = 0;
+  let isDragging = false;
+
+  const handle = sheet.querySelector('.mobile-sheet-handle');
+  const header = sheet.querySelector('.mobile-sheet-header');
+
+  const onStart = (e) => {
+    const touch = e.touches ? e.touches[0] : e;
+    startY = touch.clientY;
+    isDragging = true;
+    sheet.style.transition = 'none';
+  };
+
+  const onMove = (e) => {
+    if (!isDragging) return;
+
+    const touch = e.touches ? e.touches[0] : e;
+    currentY = touch.clientY;
+    const deltaY = currentY - startY;
+
+    // Only allow dragging down
+    if (deltaY > 0) {
+      sheet.style.transform = `translateY(${deltaY}px)`;
+    }
+  };
+
+  const onEnd = () => {
+    if (!isDragging) return;
+
+    isDragging = false;
+    sheet.style.transition = 'transform 0.3s ease';
+
+    const deltaY = currentY - startY;
+
+    // Close if dragged down more than 100px
+    if (deltaY > 100) {
+      closeMobileSheet();
+    } else {
+      sheet.style.transform = 'translateY(0)';
+    }
+
+    startY = 0;
+    currentY = 0;
+  };
+
+  // Handle
+  if (handle) {
+    handle.addEventListener('touchstart', onStart, { passive: true });
+    handle.addEventListener('touchmove', onMove, { passive: true });
+    handle.addEventListener('touchend', onEnd);
+  }
+
+  // Header
+  if (header) {
+    header.addEventListener('touchstart', onStart, { passive: true });
+    header.addEventListener('touchmove', onMove, { passive: true });
+    header.addEventListener('touchend', onEnd);
+  }
 }
 
 function syncMobileFilters() {
@@ -1564,6 +1867,12 @@ function openPopupFromHash() {
 }
 
 function openFeaturePopup(feature, lngLat) {
+  // On mobile, show bottom sheet instead of popup
+  if (isMobileView()) {
+    openMobileSheet(feature);
+    return;
+  }
+
   const p = feature.properties || {};
   const media = getMediaWithTypes(p);
   const missing = normalizeBoolean(p.missing_info);
