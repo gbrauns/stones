@@ -11,8 +11,12 @@ async function initApp() {
 
   // Load i18n in parallel (non-blocking)
   window.i18n.setLanguage(window.i18n.getCurrentLanguage()).then(() => {
-    updateUITexts();
-    console.log('[i18n] Language loaded');
+    if (typeof updateUITexts === 'function') {
+      updateUITexts();
+      console.log('[i18n] Language loaded and UI updated');
+    } else {
+      console.warn('[i18n] updateUITexts function not found - old cache?');
+    }
   });
 }
 
@@ -2645,6 +2649,9 @@ function initLanguageToggle() {
   }
 }
 
+}
+
+// i18n UI update function (global scope)
 function updateUITexts() {
   // Update all elements with data-i18n attribute
   document.querySelectorAll("[data-i18n]").forEach(el => {
@@ -2680,11 +2687,9 @@ function updateUITexts() {
   document.title = t("app.title") + " - " + t("app.description").split(".")[0];
 
   // Re-render list if needed (to update empty state text)
-  if (filteredFeatures.length === 0 && els.objectsList) {
+  if (typeof filteredFeatures !== 'undefined' && filteredFeatures.length === 0 && els.objectsList) {
     renderObjectsList();
   }
-}
-
 }
 
 // Start the app
