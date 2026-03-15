@@ -1780,11 +1780,12 @@ function renderObjectsList(reset = true) {
   // Render items up to displayedItemsCount
   const itemsToRender = sorted.slice(0, displayedItemsCount);
 
-  // Batch render for performance (smaller batches to avoid RAF violations)
-  const BATCH_SIZE = 5;
+  // Batch render for performance - smaller batches with micro-delays
+  const BATCH_SIZE = 3; // Reduced from 5 to 3 for smoother rendering
   let currentIndex = 0;
 
   const renderBatch = () => {
+    const startTime = performance.now();
     const endIndex = Math.min(currentIndex + BATCH_SIZE, itemsToRender.length);
 
     for (let i = currentIndex; i < endIndex; i++) {
@@ -1796,12 +1797,20 @@ function renderObjectsList(reset = true) {
       }
 
       renderObjectItem(f, box);
+
+      // Break early if we're taking too long (>10ms budget per frame)
+      if (performance.now() - startTime > 10) {
+        currentIndex = i + 1;
+        requestAnimationFrame(renderBatch);
+        return;
+      }
     }
 
     currentIndex = endIndex;
 
     if (currentIndex < itemsToRender.length) {
-      requestAnimationFrame(renderBatch);
+      // Small delay to ensure smooth 60fps
+      setTimeout(() => requestAnimationFrame(renderBatch), 0);
     } else {
       // Add load more button after all items are rendered
       addLoadMoreButton(box, sorted);
@@ -2506,20 +2515,37 @@ async function loadVersion() {
   try {
     // Add timestamp to prevent caching
     const timestamp = Date.now();
-    const res = await fetch(`${VERSION_URL}?t=${timestamp}`, { cache: 'no-store' });
+    const url = `${VERSION_URL}?t=${timestamp}`;
+    console.log('[Version] Fetching from:', url);
+
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to load version');
 
     const data = await res.json();
     const version = String(data.version || '?').trim();
 
+    console.log('[Version] Received data:', data);
+    console.log('[Version] Setting version to:', version);
+    console.log('[Version] Elements:', {
+      versionNumber: els.versionNumber,
+      mobileVersion: els.mobileVersion
+    });
+
     if (els.versionNumber) {
       els.versionNumber.textContent = version;
-    }
-    if (els.mobileVersion) {
-      els.mobileVersion.textContent = version;
+      console.log('[Version] Desktop version updated to:', els.versionNumber.textContent);
+    } else {
+      console.warn('[Version] Desktop version element not found!');
     }
 
-    console.log('[Version] Loaded:', version);
+    if (els.mobileVersion) {
+      els.mobileVersion.textContent = version;
+      console.log('[Version] Mobile version updated to:', els.mobileVersion.textContent);
+    } else {
+      console.warn('[Version] Mobile version element not found!');
+    }
+
+    console.log('[Version] ✅ Successfully loaded:', version);
   } catch (e) {
     console.warn('[Version] failed to load:', e);
     if (els.versionNumber) {
