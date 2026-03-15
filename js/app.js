@@ -1780,8 +1780,8 @@ function renderObjectsList(reset = true) {
   // Render items up to displayedItemsCount
   const itemsToRender = sorted.slice(0, displayedItemsCount);
 
-  // Batch render for performance
-  const BATCH_SIZE = 10;
+  // Batch render for performance (smaller batches to avoid RAF violations)
+  const BATCH_SIZE = 5;
   let currentIndex = 0;
 
   const renderBatch = () => {
@@ -2504,7 +2504,9 @@ function hideLoader() {
 
 async function loadVersion() {
   try {
-    const res = await fetch(VERSION_URL, { cache: 'no-cache' });
+    // Add timestamp to prevent caching
+    const timestamp = Date.now();
+    const res = await fetch(`${VERSION_URL}?t=${timestamp}`, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to load version');
 
     const data = await res.json();
@@ -2516,6 +2518,8 @@ async function loadVersion() {
     if (els.mobileVersion) {
       els.mobileVersion.textContent = version;
     }
+
+    console.log('[Version] Loaded:', version);
   } catch (e) {
     console.warn('[Version] failed to load:', e);
     if (els.versionNumber) {
