@@ -10,7 +10,7 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=30" />
+  <link rel="stylesheet" href="css/styles.css?v=31" />
 </head>
 <body>
 
@@ -58,7 +58,96 @@
     </footer>
   </aside>
 
-  <div id="map" class="tab-content" data-content="map"></div>
+  <div id="map"></div>
+
+  <!-- Mobile controls (hidden on desktop) -->
+  <div class="mobile-controls">
+    <button id="mobileListBtn" class="mobile-control-btn" type="button" title="Saraksts">
+      📋
+      <span id="mobile-total-count" class="mobile-btn-badge">0</span>
+    </button>
+    <button id="mobileFiltersBtn" class="mobile-control-btn" type="button" title="Filtri">
+      🔍
+    </button>
+  </div>
+
+  <!-- Mobile zoom controls -->
+  <div class="mobile-zoom-controls">
+    <button id="mobileZoomIn" class="mobile-zoom-btn" type="button" title="Zoom in">+</button>
+    <button id="mobileZoomOut" class="mobile-zoom-btn" type="button" title="Zoom out">−</button>
+  </div>
+
+  <!-- Mobile version badge -->
+  <div id="mobile-version" class="mobile-version">v<span id="mobile-version-number">...</span></div>
+
+  <!-- Mobile list overlay (full screen) -->
+  <div id="mobileListOverlay" class="mobile-overlay">
+    <div class="mobile-overlay-header">
+      <h2 class="mobile-overlay-title">
+        <span id="mobile-list-count" class="count-badge">0</span>
+        Akmeņu karte
+      </h2>
+      <button id="closeMobileList" class="mobile-close-btn" type="button">✕</button>
+    </div>
+
+    <div class="mobile-overlay-search">
+      <input id="mobile-filter-search" type="text" placeholder="Meklēt (nosaukums, autors, valsts)..." />
+    </div>
+
+    <div id="mobile-objects-list" class="mobile-overlay-content">
+      <div id="mobile-pull-to-refresh-indicator" class="pull-to-refresh-indicator">
+        <div class="pull-to-refresh-spinner"></div>
+        <span>Atjaunot...</span>
+      </div>
+    </div>
+
+    <div class="mobile-overlay-footer">
+      <a href="https://forms.gle/JcUwCwtvCwwk2Yxr7" target="_blank" rel="noopener noreferrer">➕ Forma</a>
+    </div>
+  </div>
+
+  <!-- Mobile filters overlay (full screen) -->
+  <div id="mobileFiltersOverlay" class="mobile-overlay">
+    <div class="mobile-overlay-header">
+      <h2 class="mobile-overlay-title">Filtri</h2>
+      <button id="closeMobileFilters" class="mobile-close-btn" type="button">✕</button>
+    </div>
+
+    <div class="mobile-overlay-content mobile-filters-body">
+      <label>
+        Autors
+        <select id="mobile-filter-author">
+          <option value="">Visi</option>
+        </select>
+      </label>
+
+      <label>
+        Gads
+        <select id="mobile-filter-year">
+          <option value="">Visi</option>
+        </select>
+      </label>
+
+      <label>
+        Kontinents
+        <select id="mobile-filter-continent">
+          <option value="">Visi</option>
+        </select>
+      </label>
+
+      <label>
+        Valsts
+        <select id="mobile-filter-country">
+          <option value="">Visas</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="mobile-overlay-actions">
+      <button id="mobileResetFilters" class="btn-secondary" type="button">Notīrīt</button>
+      <button id="mobileApplyFilters" class="btn-primary" type="button">Pielietot</button>
+    </div>
+  </div>
 </div>
 
 <div id="filtersModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
@@ -141,7 +230,7 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<script src="config.php?v=30"></script>
-<script src="js/app.js?v=30"></script>
+<script src="config.php?v=31"></script>
+<script src="js/app.js?v=31"></script>
 </body>
 </html>

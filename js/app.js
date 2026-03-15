@@ -39,7 +39,6 @@ let highlightedCountryIso = null; // Pašlaik highlighted valsts (popup atvērts
 const els = {
   loader: document.getElementById('loader'),
   totalCount: document.getElementById('total-count'),
-  mobileCountBadge: document.getElementById('mobile-count-badge'),
   objectsList: document.getElementById('objects-list'),
   search: document.getElementById('filter-search'),
 
@@ -57,13 +56,36 @@ const els = {
 
   versionNumber: document.getElementById('version-number'),
 
-  // Mobile tabs
-  mobileTabs: document.getElementById('mobile-tabs'),
   sidebar: document.getElementById('sidebar'),
   mapContainer: document.getElementById('map'),
 
   // Pull to refresh
-  pullToRefreshIndicator: document.getElementById('pull-to-refresh-indicator')
+  pullToRefreshIndicator: document.getElementById('pull-to-refresh-indicator'),
+
+  // Mobile controls
+  mobileListBtn: document.getElementById('mobileListBtn'),
+  mobileFiltersBtn: document.getElementById('mobileFiltersBtn'),
+  mobileTotalCount: document.getElementById('mobile-total-count'),
+  mobileZoomIn: document.getElementById('mobileZoomIn'),
+  mobileZoomOut: document.getElementById('mobileZoomOut'),
+  mobileVersion: document.getElementById('mobile-version-number'),
+
+  // Mobile overlays
+  mobileListOverlay: document.getElementById('mobileListOverlay'),
+  closeMobileList: document.getElementById('closeMobileList'),
+  mobileFilterSearch: document.getElementById('mobile-filter-search'),
+  mobileObjectsList: document.getElementById('mobile-objects-list'),
+  mobileListCount: document.getElementById('mobile-list-count'),
+  mobilePullToRefresh: document.getElementById('mobile-pull-to-refresh-indicator'),
+
+  mobileFiltersOverlay: document.getElementById('mobileFiltersOverlay'),
+  closeMobileFilters: document.getElementById('closeMobileFilters'),
+  mobileFilterAuthor: document.getElementById('mobile-filter-author'),
+  mobileFilterYear: document.getElementById('mobile-filter-year'),
+  mobileFilterContinent: document.getElementById('mobile-filter-continent'),
+  mobileFilterCountry: document.getElementById('mobile-filter-country'),
+  mobileResetFilters: document.getElementById('mobileResetFilters'),
+  mobileApplyFilters: document.getElementById('mobileApplyFilters')
 };
 
 const map = new mapboxgl.Map({
@@ -75,7 +97,7 @@ const map = new mapboxgl.Map({
 
 map.on('load', async () => {
   initModal();
-  initMobileTabs();
+  initMobileControls();
   initPullToRefresh();
   initDarkMode();
   loadVersion();
@@ -396,44 +418,232 @@ function initModalSwipe() {
   sheet.addEventListener('touchcancel', onTouchEnd);
 }
 
-function initMobileTabs() {
-  if (!els.mobileTabs) {
-    console.log('[Mobile Tabs] Element not found');
-    return;
-  }
+function initMobileControls() {
+  console.log('[Mobile Controls] Initializing');
 
-  const tabs = els.mobileTabs.querySelectorAll('.mobile-tab');
-  console.log('[Mobile Tabs] Initialized with', tabs.length, 'tabs');
+  // Mobile list button - opens list overlay
+  if (els.mobileListBtn) {
+    els.mobileListBtn.addEventListener('click', () => {
+      console.log('[Mobile] Opening list overlay');
+      els.mobileListOverlay.classList.add('active');
 
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      const targetTab = tab.dataset.tab;
-      console.log('[Mobile Tabs] Switching to:', targetTab);
+      // Sync list content from desktop
+      if (els.objectsList && els.mobileObjectsList) {
+        els.mobileObjectsList.innerHTML = els.objectsList.innerHTML;
 
-      // Update active tab
-      tabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-
-      // Switch content
-      if (targetTab === 'list') {
-        console.log('[Mobile Tabs] Showing list');
-        els.sidebar.classList.add('active');
-        els.mapContainer.classList.remove('active');
-      } else if (targetTab === 'map') {
-        console.log('[Mobile Tabs] Showing map');
-        els.sidebar.classList.remove('active');
-        els.mapContainer.classList.add('active');
-
-        // Resize map when switching to it (multiple attempts for reliability)
-        setTimeout(() => {
-          console.log('[Mobile Tabs] Resizing map');
-          map.resize();
-        }, 100);
-        setTimeout(() => map.resize(), 300);
-        setTimeout(() => map.resize(), 500);
+        // Re-attach click listeners to mobile list items
+        attachMobileListItemListeners();
       }
 
-      // Haptic feedback (if supported)
+      // Sync search value
+      if (els.search && els.mobileFilterSearch) {
+        els.mobileFilterSearch.value = els.search.value;
+      }
+
+      // Haptic feedback
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  }
+
+  // Close mobile list overlay
+  if (els.closeMobileList) {
+    els.closeMobileList.addEventListener('click', () => {
+      console.log('[Mobile] Closing list overlay');
+      els.mobileListOverlay.classList.remove('active');
+
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  }
+
+  // Mobile filters button - opens filters overlay
+  if (els.mobileFiltersBtn) {
+    els.mobileFiltersBtn.addEventListener('click', () => {
+      console.log('[Mobile] Opening filters overlay');
+      els.mobileFiltersOverlay.classList.add('active');
+
+      // Sync filter values from desktop
+      syncMobileFilters();
+
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  }
+
+  // Close mobile filters overlay
+  if (els.closeMobileFilters) {
+    els.closeMobileFilters.addEventListener('click', () => {
+      console.log('[Mobile] Closing filters overlay');
+      els.mobileFiltersOverlay.classList.remove('active');
+
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  }
+
+  // Mobile apply filters
+  if (els.mobileApplyFilters) {
+    els.mobileApplyFilters.addEventListener('click', () => {
+      console.log('[Mobile] Applying filters');
+
+      // Copy mobile filter values to desktop filters
+      if (els.author && els.mobileFilterAuthor) {
+        els.author.value = els.mobileFilterAuthor.value;
+      }
+      if (els.year && els.mobileFilterYear) {
+        els.year.value = els.mobileFilterYear.value;
+      }
+      if (els.continent && els.mobileFilterContinent) {
+        els.continent.value = els.mobileFilterContinent.value;
+      }
+      if (els.country && els.mobileFilterCountry) {
+        els.country.value = els.mobileFilterCountry.value;
+      }
+
+      // Apply filters
+      applyFilters();
+
+      // Close overlay
+      els.mobileFiltersOverlay.classList.remove('active');
+
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  }
+
+  // Mobile reset filters
+  if (els.mobileResetFilters) {
+    els.mobileResetFilters.addEventListener('click', () => {
+      console.log('[Mobile] Resetting filters');
+
+      // Reset mobile filters
+      if (els.mobileFilterAuthor) els.mobileFilterAuthor.value = '';
+      if (els.mobileFilterYear) els.mobileFilterYear.value = '';
+      if (els.mobileFilterContinent) els.mobileFilterContinent.value = '';
+      if (els.mobileFilterCountry) els.mobileFilterCountry.value = '';
+
+      // Reset desktop filters
+      if (els.author) els.author.value = '';
+      if (els.year) els.year.value = '';
+      if (els.continent) els.continent.value = '';
+      if (els.country) els.country.value = '';
+
+      // Apply filters
+      applyFilters();
+
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  }
+
+  // Mobile search (sync with desktop)
+  if (els.mobileFilterSearch) {
+    els.mobileFilterSearch.addEventListener('input', (e) => {
+      if (els.search) {
+        els.search.value = e.target.value;
+        els.search.dispatchEvent(new Event('input'));
+      }
+    });
+  }
+
+  // Mobile continent change (update country filter)
+  if (els.mobileFilterContinent) {
+    els.mobileFilterContinent.addEventListener('change', () => {
+      const continent = els.mobileFilterContinent.value;
+      populateCountryFilter(continent);
+
+      // Populate mobile country filter too
+      if (els.mobileFilterCountry && els.country) {
+        els.mobileFilterCountry.innerHTML = els.country.innerHTML;
+        els.mobileFilterCountry.value = '';
+      }
+    });
+  }
+
+  // Mobile zoom controls
+  if (els.mobileZoomIn) {
+    els.mobileZoomIn.addEventListener('click', () => {
+      console.log('[Mobile] Zoom in');
+      map.zoomIn();
+
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  }
+
+  if (els.mobileZoomOut) {
+    els.mobileZoomOut.addEventListener('click', () => {
+      console.log('[Mobile] Zoom out');
+      map.zoomOut();
+
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  }
+
+  console.log('[Mobile Controls] Initialized');
+}
+
+function syncMobileFilters() {
+  // Copy desktop filter values to mobile
+  if (els.author && els.mobileFilterAuthor) {
+    els.mobileFilterAuthor.innerHTML = els.author.innerHTML;
+    els.mobileFilterAuthor.value = els.author.value;
+  }
+  if (els.year && els.mobileFilterYear) {
+    els.mobileFilterYear.innerHTML = els.year.innerHTML;
+    els.mobileFilterYear.value = els.year.value;
+  }
+  if (els.continent && els.mobileFilterContinent) {
+    els.mobileFilterContinent.innerHTML = els.continent.innerHTML;
+    els.mobileFilterContinent.value = els.continent.value;
+  }
+  if (els.country && els.mobileFilterCountry) {
+    els.mobileFilterCountry.innerHTML = els.country.innerHTML;
+    els.mobileFilterCountry.value = els.country.value;
+  }
+}
+
+function attachMobileListItemListeners() {
+  if (!els.mobileObjectsList) return;
+
+  const items = els.mobileObjectsList.querySelectorAll('.obj-item');
+  items.forEach(item => {
+    // Remove existing listener by cloning (avoids duplicate listeners)
+    const newItem = item.cloneNode(true);
+    item.parentNode.replaceChild(newItem, item);
+
+    // Add click listener that closes overlay
+    newItem.addEventListener('click', () => {
+      const uid = newItem.dataset.uid;
+      if (!uid) return;
+
+      // Find the feature
+      const feature = allFeatures.find(f => f.__uid === uid);
+      if (!feature) return;
+
+      const coords = feature.geometry.coordinates;
+      map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 7), speed: 1.2 });
+
+      setTimeout(() => {
+        openFeaturePopup(feature, coords);
+      }, 250);
+
+      // Close mobile list overlay
+      if (els.mobileListOverlay) {
+        els.mobileListOverlay.classList.remove('active');
+      }
+
+      // Haptic feedback
       if (window.navigator.vibrate) {
         window.navigator.vibrate(10);
       }
@@ -755,8 +965,11 @@ function updateTotalCountBadge(n) {
   if (els.totalCount) {
     els.totalCount.textContent = count;
   }
-  if (els.mobileCountBadge) {
-    els.mobileCountBadge.textContent = count;
+  if (els.mobileTotalCount) {
+    els.mobileTotalCount.textContent = count;
+  }
+  if (els.mobileListCount) {
+    els.mobileListCount.textContent = count;
   }
 }
 
@@ -1133,6 +1346,11 @@ function renderObjectsList(reset = true) {
       setTimeout(() => {
         openFeaturePopup(f, coords);
       }, 250);
+
+      // Close mobile list overlay if open
+      if (els.mobileListOverlay && els.mobileListOverlay.classList.contains('active')) {
+        els.mobileListOverlay.classList.remove('active');
+      }
 
       // Haptic feedback
       if (window.navigator.vibrate) {
@@ -1767,8 +1985,6 @@ function hideLoader() {
 }
 
 async function loadVersion() {
-  if (!els.versionNumber) return;
-
   try {
     const res = await fetch(VERSION_URL, { cache: 'no-cache' });
     if (!res.ok) throw new Error('Failed to load version');
@@ -1776,9 +1992,19 @@ async function loadVersion() {
     const data = await res.json();
     const version = String(data.version || '?').trim();
 
-    els.versionNumber.textContent = version;
+    if (els.versionNumber) {
+      els.versionNumber.textContent = version;
+    }
+    if (els.mobileVersion) {
+      els.mobileVersion.textContent = version;
+    }
   } catch (e) {
     console.warn('[Version] failed to load:', e);
-    els.versionNumber.textContent = '?';
+    if (els.versionNumber) {
+      els.versionNumber.textContent = '?';
+    }
+    if (els.mobileVersion) {
+      els.mobileVersion.textContent = '?';
+    }
   }
 }
