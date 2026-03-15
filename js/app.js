@@ -139,6 +139,9 @@ map.on('load', async () => {
 
   // Continue with data loading in background
   await loadDataPromise;
+
+  // Deep linking - open popup from hash after data is loaded
+  openPopupFromHash();
 });
 
 async function loadAppData() {
@@ -278,9 +281,6 @@ async function loadAppData() {
 
   populateFilters();
   applyFilters();
-
-  // Deep linking - ja URL satur hash, atver atbilstošo objektu
-  openPopupFromHash();
 
   // 1) Load countries layer in background (non-blocking)
   // This improves initial load time
