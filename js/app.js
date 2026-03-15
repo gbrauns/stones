@@ -1,8 +1,23 @@
-const cfg = window.APP_CONFIG || {};
-if (!cfg.MAPBOX_TOKEN || !cfg.DATA_URL) {
-  alert('Trūkst konfigurācijas. Pārbaudi config.php (MAPBOX_TOKEN un DATA_URL).');
-  throw new Error('Missing MAPBOX_TOKEN or DATA_URL');
+// Initialize app with optimized loading
+async function initApp() {
+  const cfg = window.APP_CONFIG || {};
+  if (!cfg.MAPBOX_TOKEN || !cfg.DATA_URL) {
+    alert('Configuration missing. Check config.php');
+    throw new Error('Missing MAPBOX_TOKEN or DATA_URL');
+  }
+
+  // Start app immediately
+  startApp();
+
+  // Load i18n in parallel (non-blocking)
+  window.i18n.setLanguage(window.i18n.getCurrentLanguage()).then(() => {
+    updateUITexts();
+    console.log('[i18n] Language loaded');
+  });
 }
+
+function startApp() {
+const cfg = window.APP_CONFIG || {};
 
 mapboxgl.accessToken = cfg.MAPBOX_TOKEN;
 
@@ -104,12 +119,26 @@ const map = new mapboxgl.Map({
 });
 
 map.on('load', async () => {
+  // Initialize UI immediately (non-blocking)
   initModal();
   initMobileControls();
   initPullToRefresh();
   initDarkMode();
+  initLanguageToggle();
   loadVersion();
 
+  // Hide loader early - show map while data loads
+  setTimeout(() => hideLoader(), 300);
+
+  // Load data in parallel without blocking
+  const loadDataPromise = loadAppData();
+
+  // Continue with data loading in background
+  await loadDataPromise;
+});
+
+async function loadAppData() {
+  // Load registry and data in parallel
   const [registryRes, dataRes] = await Promise.all([
     fetch(REGISTRY_URL, { cache: 'default' }).catch(() => null),
     fetch(DATA_URL).catch(() => null)
@@ -169,10 +198,7 @@ map.on('load', async () => {
   updateTotalCountBadge(allFeatures.length);
   computeContinentStats();
 
-  // 1) Countries polygons
-  await addCountriesLayer();
-
-  // 2) Stones points with clustering
+  // 2) Stones points with clustering (load first for speed)
   map.addSource('stones', {
     type: 'geojson',
     data: { type: 'FeatureCollection', features: allFeatures },
@@ -246,20 +272,28 @@ map.on('load', async () => {
     }
   });
 
-  // Pārliek countries zem punktiem, ja vajag
-  tryMoveCountriesBelowStones();
-
   populateFilters();
   applyFilters();
-
-  // Iekrāso valstis pēc allFeatures (tikai vienreiz)
-  updateActiveCountries();
 
   // Deep linking - ja URL satur hash, atver atbilstošo objektu
   openPopupFromHash();
 
-  // Paslēpj loader, kad viss ir ielādēts
-  hideLoader();
+  // 1) Load countries layer in background (non-blocking)
+  // This improves initial load time
+  const loadCountries = () => {
+    addCountriesLayer().then(() => {
+      tryMoveCountriesBelowStones();
+      updateActiveCountries();
+      console.log('[Performance] Countries layer loaded');
+    });
+  };
+
+  // Use requestIdleCallback if available, otherwise setTimeout
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(loadCountries, { timeout: 2000 });
+  } else {
+    setTimeout(loadCountries, 1000);
+  }
 });
 
 // Click uz cluster - zoom in
@@ -786,9 +820,9 @@ function isMobileView() {
 // Global function for copying to clipboard (used in mobile sheet)
 window.copyToClipboard = function(text) {
   navigator.clipboard.writeText(text).then(() => {
-    alert('Saite nokopēta! 🔗');
+    alert(t('object.link_copied'));
   }).catch(() => {
-    alert('Neizdevās nokopēt saiti');
+    alert(t('object.link_copy_failed'));
   });
 };
 
@@ -863,20 +897,20 @@ function openMobileSheet(feature) {
 
   // Status badge
   if (missing) {
-    html += '<span class="mobile-detail-chip badge-missing">Trūkst info</span>';
+    html += `<span class="mobile-detail-chip badge-missing">${t('object.status_incomplete')}</span>`;
   } else {
-    html += '<span class="mobile-detail-chip badge-ok">Pilnīga info</span>';
+    html += `<span class="mobile-detail-chip badge-ok">${t('object.status_complete')}</span>`;
   }
 
   // Author
   if (p.author) {
-    html += `<span class="mobile-detail-chip">👤 ${escapeHtml(p.author)}</span>`;
+    html += `<span class="mobile-detail-chip">${t('object.author_prefix')} ${escapeHtml(p.author)}</span>`;
   }
 
   // Date
   const dateText = formatDateDDMMMYYYY(p.date);
   if (dateText) {
-    html += `<span class="mobile-detail-chip">📅 ${dateText}</span>`;
+    html += `<span class="mobile-detail-chip">${t('object.date_prefix')} ${dateText}</span>`;
   }
 
   html += '</div>';
@@ -902,7 +936,7 @@ function openMobileSheet(feature) {
   const uniqueSlug = feature.__index !== undefined ? `${slug}-${feature.__index}` : slug;
   const shareUrl = `${window.location.origin}${window.location.pathname}#${uniqueSlug}`;
 
-  html += `<button class="mobile-detail-btn" onclick="copyToClipboard('${shareUrl}')">🔗 Kopēt saiti</button>`;
+  html += `<button class="mobile-detail-btn" onclick="copyToClipboard('${shareUrl}')">${t('object.copy_link')}</button>`;
   html += '</div>';
 
   els.mobileSheetContent.innerHTML = html;
@@ -1343,6 +1377,9 @@ function applyFilters() {
     const country = els.country.value;
     const q = String(els.search.value || '').trim().toLowerCase();
 
+    // Update filter active indicator
+    updateFilterIndicator(author, year, continent, country, q);
+
     filteredFeatures = allFeatures.filter(f => {
       const p = f.properties || {};
 
@@ -1391,6 +1428,31 @@ function updateTotalCountBadge(n) {
   }
   if (els.mobileListCount) {
     els.mobileListCount.textContent = count;
+  }
+}
+
+function updateFilterIndicator(author, year, continent, country, searchQuery) {
+  // Check if any filter is active
+  const isFilterActive = !!(author || year || continent || country || searchQuery);
+
+  // Update desktop badge
+  const desktopBadge = document.getElementById('filterActiveBadge');
+  if (desktopBadge) {
+    if (isFilterActive) {
+      desktopBadge.classList.remove('hidden');
+    } else {
+      desktopBadge.classList.add('hidden');
+    }
+  }
+
+  // Update mobile badge
+  const mobileBadge = document.getElementById('mobileFilterActiveBadge');
+  if (mobileBadge) {
+    if (isFilterActive) {
+      mobileBadge.classList.remove('hidden');
+    } else {
+      mobileBadge.classList.add('hidden');
+    }
   }
 }
 
@@ -1702,7 +1764,7 @@ function renderObjectsList(reset = true) {
   if (!filteredFeatures.length) {
     const empty = document.createElement('div');
     empty.className = 'obj-empty';
-    empty.textContent = 'Nav atrasts neviens objekts pēc šiem filtriem.';
+    empty.textContent = t('list.empty');
     box.appendChild(empty);
     return;
   }
@@ -1715,83 +1777,112 @@ function renderObjectsList(reset = true) {
     return ta.localeCompare(tb, 'lv');
   });
 
+  // Render items up to displayedItemsCount
+  const itemsToRender = sorted.slice(0, displayedItemsCount);
+
+  // Batch render for performance
+  const BATCH_SIZE = 10;
+  let currentIndex = 0;
+
+  const renderBatch = () => {
+    const endIndex = Math.min(currentIndex + BATCH_SIZE, itemsToRender.length);
+
+    for (let i = currentIndex; i < endIndex; i++) {
+      const f = itemsToRender[i];
+
+      // Skip if already rendered
+      if (box.querySelector(`[data-uid="${f.__uid}"]`)) {
+        continue;
+      }
+
+      renderObjectItem(f, box);
+    }
+
+    currentIndex = endIndex;
+
+    if (currentIndex < itemsToRender.length) {
+      requestAnimationFrame(renderBatch);
+    } else {
+      // Add load more button after all items are rendered
+      addLoadMoreButton(box, sorted);
+    }
+  };
+
+  renderBatch();
+}
+
+function renderObjectItem(f, box) {
+  const p = f.properties || {};
+  const missing = normalizeBoolean(p.missing_info);
+
+  const title = getTitleWithCountry(p);
+  const sub = `${p.author || ''} · ${formatDateDDMMMYYYY(p.date)}`.trim();
+
+  const item = document.createElement('div');
+  item.className = 'obj-item';
+  item.dataset.uid = f.__uid;
+
+  const dot = document.createElement('div');
+  dot.className = `obj-dot ${missing ? 'missing' : 'ok'}`;
+
+  const main = document.createElement('div');
+  main.className = 'obj-main';
+
+  const t = document.createElement('div');
+  t.className = 'obj-title';
+  t.textContent = title;
+
+  const s = document.createElement('div');
+  s.className = 'obj-sub';
+  s.textContent = sub;
+
+  main.appendChild(t);
+  main.appendChild(s);
+
+  item.appendChild(dot);
+  item.appendChild(main);
+
+  item.addEventListener('click', () => {
+    const coords = f.geometry.coordinates;
+    map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 7), speed: 1.2 });
+
+    setTimeout(() => {
+      openFeaturePopup(f, coords);
+    }, 250);
+
+    // Close mobile list overlay if open
+    if (els.mobileListOverlay && els.mobileListOverlay.classList.contains('active')) {
+      els.mobileListOverlay.classList.remove('active');
+    }
+
+    // Haptic feedback
+    if (window.navigator.vibrate) {
+      window.navigator.vibrate(10);
+    }
+  });
+
+  box.appendChild(item);
+}
+
+function addLoadMoreButton(box, sorted) {
   // Remove existing load more button if present
   const existingLoadMore = box.querySelector('.load-more-btn');
   if (existingLoadMore) {
     existingLoadMore.remove();
   }
 
-  // Render items up to displayedItemsCount
-  const itemsToRender = sorted.slice(0, displayedItemsCount);
-
-  itemsToRender.forEach((f) => {
-    // Skip if already rendered
-    if (box.querySelector(`[data-uid="${f.__uid}"]`)) {
-      return;
-    }
-
-    const p = f.properties || {};
-    const missing = normalizeBoolean(p.missing_info);
-
-    const title = getTitleWithCountry(p);
-    const sub = `${p.author || ''} · ${formatDateDDMMMYYYY(p.date)}`.trim();
-
-    const item = document.createElement('div');
-    item.className = 'obj-item';
-    item.dataset.uid = f.__uid;
-
-    const dot = document.createElement('div');
-    dot.className = `obj-dot ${missing ? 'missing' : 'ok'}`;
-
-    const main = document.createElement('div');
-    main.className = 'obj-main';
-
-    const t = document.createElement('div');
-    t.className = 'obj-title';
-    t.textContent = title;
-
-    const s = document.createElement('div');
-    s.className = 'obj-sub';
-    s.textContent = sub;
-
-    main.appendChild(t);
-    main.appendChild(s);
-
-    item.appendChild(dot);
-    item.appendChild(main);
-
-    item.addEventListener('click', () => {
-      const coords = f.geometry.coordinates;
-      map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 7), speed: 1.2 });
-
-      setTimeout(() => {
-        openFeaturePopup(f, coords);
-      }, 250);
-
-      // Close mobile list overlay if open
-      if (els.mobileListOverlay && els.mobileListOverlay.classList.contains('active')) {
-        els.mobileListOverlay.classList.remove('active');
-      }
-
-      // Haptic feedback
-      if (window.navigator.vibrate) {
-        window.navigator.vibrate(10);
-      }
-    });
-
-    box.appendChild(item);
-  });
-
   // Add load more button if there are more items
   if (displayedItemsCount < sorted.length) {
     const loadMoreBtn = document.createElement('button');
     loadMoreBtn.className = 'load-more-btn';
-    loadMoreBtn.textContent = `Ielādēt vairāk (${Math.min(ITEMS_PER_PAGE, sorted.length - displayedItemsCount)} no ${sorted.length - displayedItemsCount})`;
+    const remaining = sorted.length - displayedItemsCount;
+    const toLoad = Math.min(ITEMS_PER_PAGE, remaining);
+    loadMoreBtn.textContent = t('list.load_more', { current: toLoad, total: remaining });
     loadMoreBtn.type = 'button';
 
     loadMoreBtn.addEventListener('click', () => {
       loadMoreBtn.classList.add('loading');
-      loadMoreBtn.textContent = 'Ielādē...';
+      loadMoreBtn.textContent = t('list.loading');
 
       setTimeout(() => {
         displayedItemsCount += ITEMS_PER_PAGE;
@@ -1941,8 +2032,8 @@ function openFeaturePopup(feature, lngLat) {
   }
 
   const badge = missing
-    ? `<span class="badge-missing">⚠️ trūkst info</span>`
-    : `<span class="badge-ok">✓ ok</span>`;
+    ? `<span class="badge-missing">${t('object.status_missing')}</span>`
+    : `<span class="badge-ok">${t('object.status_ok')}</span>`;
 
   const popupId = `sl_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
 
@@ -1968,8 +2059,8 @@ function openFeaturePopup(feature, lngLat) {
         </div>
       </div>
       <div class="popup-meta">
-        <span class="popup-chip">👤 ${escapeHtml(p.author || '')}</span>
-        <span class="popup-chip">📅 ${escapeHtml(dateText)}</span>
+        <span class="popup-chip">${t('object.author_prefix')} ${escapeHtml(p.author || '')}</span>
+        <span class="popup-chip">${t('object.date_prefix')} ${escapeHtml(dateText)}</span>
       </div>
 
       ${slideshowHtml}
@@ -2435,3 +2526,94 @@ async function loadVersion() {
     }
   }
 }
+
+
+function initLanguageToggle() {
+  const langToggle = document.getElementById("langToggle");
+  const langToggleText = document.getElementById("langToggleText");
+  const mobileLangToggle = document.getElementById("mobileLangToggle");
+  const mobileLangToggleText = document.getElementById("mobileLangToggleText");
+
+  // Update toggle text based on current language
+  function updateToggleText() {
+    const currentLang = window.i18n.getCurrentLanguage();
+    const nextLang = currentLang === "lv" ? "EN" : "LV";
+
+    if (langToggleText) langToggleText.textContent = nextLang;
+    if (mobileLangToggleText) mobileLangToggleText.textContent = nextLang;
+  }
+
+  updateToggleText();
+
+  // Desktop language toggle
+  if (langToggle) {
+    langToggle.addEventListener("click", async () => {
+      await window.i18n.toggleLanguage();
+      updateToggleText();
+      updateUITexts();
+      
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  }
+
+  // Mobile language toggle
+  if (mobileLangToggle) {
+    mobileLangToggle.addEventListener("click", async () => {
+      await window.i18n.toggleLanguage();
+      updateToggleText();
+      updateUITexts();
+      
+      if (window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    });
+  }
+}
+
+function updateUITexts() {
+  // Update all elements with data-i18n attribute
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    el.textContent = t(key);
+  });
+
+  // Update placeholders
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    el.placeholder = t(key);
+  });
+
+  // Update titles
+  document.querySelectorAll("[data-i18n-title]").forEach(el => {
+    const key = el.getAttribute("data-i18n-title");
+    el.title = t(key);
+  });
+
+  // Update aria-labels
+  document.querySelectorAll("[data-i18n-aria-label]").forEach(el => {
+    const key = el.getAttribute("data-i18n-aria-label");
+    el.setAttribute("aria-label", t(key));
+  });
+
+  // Update meta description
+  const metaDesc = document.querySelector("meta[name=\"description\"]");
+  if (metaDesc) {
+    metaDesc.setAttribute("content", t("app.description"));
+  }
+
+  // Update page title (keep original format)
+  document.title = t("app.title") + " - " + t("app.description").split(".")[0];
+
+  // Re-render list if needed (to update empty state text)
+  if (filteredFeatures.length === 0 && els.objectsList) {
+    renderObjectsList();
+  }
+}
+
+}
+
+// Start the app
+initApp();
+

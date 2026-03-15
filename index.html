@@ -2,22 +2,26 @@
 <html lang="lv">
 <head>
   <meta charset="utf-8" />
-  <title>Akmeņu karte - Interaktīva pasaules akmeņu un pieminekļu karte</title>
-  <meta name="description" content="Interaktīva karte ar akmeņiem un pieminekļiem no visas pasaules. Meklē, filtrē un izpēti unikālus objektus ar fotogrāfijām, aprakstiem un atrašanās vietām." />
+  <title data-i18n="app.title">Akmeņu karte</title>
+  <meta name="description" content="Interaktīva karte ar akmeņiem un pieminekļiem no visas pasaules. Meklē, filtrē un izpēti unikālus objektus ar fotogrāfijām, aprakstiem un atrašanās vietām." data-i18n-content="app.description" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+
+  <!-- Resource hints for faster loading -->
+  <link rel="preconnect" href="https://api.mapbox.com" />
+  <link rel="dns-prefetch" href="https://api.mapbox.com" />
 
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=33" />
+  <link rel="stylesheet" href="css/styles.css?v=37" />
 </head>
 <body>
 
 <div id="loader" class="loader-overlay">
   <div class="loader-content">
     <div class="spinner"></div>
-    <div class="loader-text">Ielādējas...</div>
+    <div class="loader-text" data-i18n="loader.loading">Ielādējas...</div>
   </div>
 </div>
 
@@ -27,34 +31,38 @@
       <div class="sidebar-title-row">
         <h1 class="sidebar-title">
           <span id="total-count" class="count-badge">0</span>
-          Akmeņu karte
+          <span data-i18n="app.title">Akmeņu karte</span>
         </h1>
 
-        <button id="openFilters" class="filters-open-btn" type="button" aria-haspopup="dialog" aria-controls="filtersModal">
+        <button id="openFilters" class="filters-open-btn" type="button" aria-haspopup="dialog" aria-controls="filtersModal" data-i18n="header.filters">
           Filtri
+          <span id="filterActiveBadge" class="filter-active-badge hidden"></span>
         </button>
-        <button id="themeToggle" class="theme-toggle-btn" type="button" title="Pārslēgt tēmu">
+        <button id="langToggle" class="theme-toggle-btn" type="button" title="Switch language">
+          <span id="langToggleText">EN</span>
+        </button>
+        <button id="themeToggle" class="theme-toggle-btn" type="button" data-i18n-title="mobile.theme_toggle" title="Pārslēgt tēmu">
           🌙
         </button>
       </div>
 
       <label class="search-row">
-        <span class="sr-only">Meklēt</span>
-        <input id="filter-search" type="text" placeholder="Meklēt (nosaukums, autors, valsts)..." />
+        <span class="sr-only" data-i18n="search.placeholder">Meklēt</span>
+        <input id="filter-search" type="text" data-i18n-placeholder="search.placeholder" placeholder="Meklēt (nosaukums, autors, valsts)..." />
       </label>
     </div>
 
-    <div id="list-title">Objekti</div>
+    <div id="list-title" data-i18n="header.objects">Objekti</div>
     <div id="objects-list">
       <div id="pull-to-refresh-indicator" class="pull-to-refresh-indicator">
         <div class="pull-to-refresh-spinner"></div>
-        <span>Atjaunot...</span>
+        <span data-i18n="list.pull_to_refresh">Atjaunot...</span>
       </div>
     </div>
-    <div id="sidebar-version">v<span id="version-number">...</span></div>
+    <div id="sidebar-version"><span data-i18n="version.prefix">v</span><span id="version-number">...</span></div>
 
     <footer id="footer">
-      <a href="https://forms.gle/JcUwCwtvCwwk2Yxr7" target="_blank" rel="noopener noreferrer">➕ Forma</a>
+      <a href="https://forms.gle/JcUwCwtvCwwk2Yxr7" target="_blank" rel="noopener noreferrer" data-i18n="footer.form_link">➕ Forma</a>
     </footer>
   </aside>
 
@@ -66,10 +74,14 @@
       📋
       <span id="mobile-total-count" class="mobile-btn-badge">0</span>
     </button>
-    <button id="mobileFiltersBtn" class="mobile-control-btn" type="button" title="Filtri">
+    <button id="mobileFiltersBtn" class="mobile-control-btn" type="button" data-i18n-title="header.filters" title="Filtri">
       🔍
+      <span id="mobileFilterActiveBadge" class="mobile-filter-active-badge hidden"></span>
     </button>
-    <button id="mobileThemeToggle" class="mobile-control-btn" type="button" title="Pārslēgt tēmu">
+    <button id="mobileLangToggle" class="mobile-control-btn mobile-lang-btn" type="button" title="Switch language">
+      <span id="mobileLangToggleText">EN</span>
+    </button>
+    <button id="mobileThemeToggle" class="mobile-control-btn" type="button" data-i18n-title="mobile.theme_toggle" title="Pārslēgt tēmu">
       🌙
     </button>
   </div>
@@ -88,24 +100,24 @@
     <div class="mobile-overlay-header">
       <h2 class="mobile-overlay-title">
         <span id="mobile-list-count" class="count-badge">0</span>
-        Akmeņu karte
+        <span data-i18n="mobile.list_title">Akmeņu karte</span>
       </h2>
-      <button id="closeMobileList" class="mobile-close-btn" type="button">✕</button>
+      <button id="closeMobileList" class="mobile-close-btn" type="button" data-i18n="mobile.close">✕</button>
     </div>
 
     <div class="mobile-overlay-search">
-      <input id="mobile-filter-search" type="text" placeholder="Meklēt (nosaukums, autors, valsts)..." />
+      <input id="mobile-filter-search" type="text" data-i18n-placeholder="search.placeholder" placeholder="Meklēt (nosaukums, autors, valsts)..." />
     </div>
 
     <div id="mobile-objects-list" class="mobile-overlay-content">
       <div id="mobile-pull-to-refresh-indicator" class="pull-to-refresh-indicator">
         <div class="pull-to-refresh-spinner"></div>
-        <span>Atjaunot...</span>
+        <span data-i18n="list.pull_to_refresh">Atjaunot...</span>
       </div>
     </div>
 
     <div class="mobile-overlay-footer">
-      <a href="https://forms.gle/JcUwCwtvCwwk2Yxr7" target="_blank" rel="noopener noreferrer">➕ Forma</a>
+      <a href="https://forms.gle/JcUwCwtvCwwk2Yxr7" target="_blank" rel="noopener noreferrer" data-i18n="footer.form_link">➕ Forma</a>
     </div>
   </div>
 
@@ -114,8 +126,8 @@
   <div id="mobileObjectSheet" class="mobile-sheet">
     <div class="mobile-sheet-handle"></div>
     <div class="mobile-sheet-header">
-      <h3 id="mobileSheetTitle" class="mobile-sheet-title">Objekts</h3>
-      <button id="closeMobileSheet" class="mobile-close-btn" type="button">✕</button>
+      <h3 id="mobileSheetTitle" class="mobile-sheet-title" data-i18n="mobile.object_title">Objekts</h3>
+      <button id="closeMobileSheet" class="mobile-close-btn" type="button" data-i18n="mobile.close">✕</button>
     </div>
     <div id="mobileSheetContent" class="mobile-sheet-content">
       <!-- Content will be dynamically filled -->
@@ -125,43 +137,43 @@
   <!-- Mobile filters overlay (full screen) -->
   <div id="mobileFiltersOverlay" class="mobile-overlay">
     <div class="mobile-overlay-header">
-      <h2 class="mobile-overlay-title">Filtri</h2>
-      <button id="closeMobileFilters" class="mobile-close-btn" type="button">✕</button>
+      <h2 class="mobile-overlay-title" data-i18n="mobile.filters_title">Filtri</h2>
+      <button id="closeMobileFilters" class="mobile-close-btn" type="button" data-i18n="mobile.close">✕</button>
     </div>
 
     <div class="mobile-overlay-content mobile-filters-body">
       <label>
-        Autors
+        <span data-i18n="filters.author">Autors</span>
         <select id="mobile-filter-author">
-          <option value="">Visi</option>
+          <option value="" data-i18n="filters.all">Visi</option>
         </select>
       </label>
 
       <label>
-        Gads
+        <span data-i18n="filters.year">Gads</span>
         <select id="mobile-filter-year">
-          <option value="">Visi</option>
+          <option value="" data-i18n="filters.all">Visi</option>
         </select>
       </label>
 
       <label>
-        Kontinents
+        <span data-i18n="filters.continent">Kontinents</span>
         <select id="mobile-filter-continent">
-          <option value="">Visi</option>
+          <option value="" data-i18n="filters.all">Visi</option>
         </select>
       </label>
 
       <label>
-        Valsts
+        <span data-i18n="filters.country">Valsts</span>
         <select id="mobile-filter-country">
-          <option value="">Visas</option>
+          <option value="" data-i18n="filters.all_countries">Visas</option>
         </select>
       </label>
     </div>
 
     <div class="mobile-overlay-actions">
-      <button id="mobileResetFilters" class="btn-secondary" type="button">Notīrīt</button>
-      <button id="mobileApplyFilters" class="btn-primary" type="button">Pielietot</button>
+      <button id="mobileResetFilters" class="btn-secondary" type="button" data-i18n="filters.reset">Notīrīt</button>
+      <button id="mobileApplyFilters" class="btn-primary" type="button" data-i18n="filters.apply">Pielietot</button>
     </div>
   </div>
 </div>
@@ -171,43 +183,43 @@
 
   <div class="modal-sheet" role="document">
     <div class="modal-top">
-      <div class="modal-title">Filtri</div>
-      <button id="closeFilters" class="modal-close-btn" type="button" aria-label="Aizvērt filtrus">✕</button>
+      <div class="modal-title" data-i18n="filters.title">Filtri</div>
+      <button id="closeFilters" class="modal-close-btn" type="button" data-i18n-aria-label="filters.close" aria-label="Aizvērt filtrus">✕</button>
     </div>
 
     <div class="modal-body">
       <label>
-        Autors
+        <span data-i18n="filters.author">Autors</span>
         <select id="filter-author">
-          <option value="">Visi</option>
+          <option value="" data-i18n="filters.all">Visi</option>
         </select>
       </label>
 
       <label>
-        Gads
+        <span data-i18n="filters.year">Gads</span>
         <select id="filter-year">
-          <option value="">Visi</option>
+          <option value="" data-i18n="filters.all">Visi</option>
         </select>
       </label>
 
       <label>
-        Kontinents
+        <span data-i18n="filters.continent">Kontinents</span>
         <select id="filter-continent">
-          <option value="">Visi</option>
+          <option value="" data-i18n="filters.all">Visi</option>
         </select>
       </label>
 
       <label>
-        Valsts
+        <span data-i18n="filters.country">Valsts</span>
         <select id="filter-country">
-          <option value="">Visas</option>
+          <option value="" data-i18n="filters.all_countries">Visas</option>
         </select>
       </label>
     </div>
 
     <div class="modal-actions">
-      <button id="resetFilters" class="btn-secondary" type="button">Notīrīt</button>
-      <button id="applyFiltersBtn" class="btn-primary" type="button">Pielietot</button>
+      <button id="resetFilters" class="btn-secondary" type="button" data-i18n="filters.reset">Notīrīt</button>
+      <button id="applyFiltersBtn" class="btn-primary" type="button" data-i18n="filters.apply">Pielietot</button>
     </div>
   </div>
 </div>
@@ -226,7 +238,8 @@ if ('serviceWorker' in navigator) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // New service worker available, prompt user to refresh
-              if (confirm('Jauna versija ir pieejama! Vai vēlaties atjaunināt?')) {
+              const message = window.t ? window.t('alerts.update_available') : 'Jauna versija ir pieejama! Vai vēlaties atjaunināt?';
+              if (confirm(message)) {
                 newWorker.postMessage({ type: 'SKIP_WAITING' });
                 window.location.reload();
               }
@@ -246,7 +259,8 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<script src="config.php?v=33"></script>
-<script src="js/app.js?v=33"></script>
+<script src="config.php?v=37"></script>
+<script src="js/i18n.js?v=37"></script>
+<script src="js/app.js?v=37"></script>
 </body>
 </html>

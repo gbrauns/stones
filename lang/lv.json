@@ -1,0 +1,78 @@
+{
+  "app": {
+    "title": "Akmeņu karte",
+    "description": "Interaktīva karte ar akmeņiem un pieminekļiem no visas pasaules. Meklē, filtrē un izpēti unikālus objektus ar fotogrāfijām, aprakstiem un atrašanās vietām."
+  },
+  "header": {
+    "objects": "Objekti",
+    "filters": "Filtri",
+    "list": "Saraksts",
+    "map": "Karte"
+  },
+  "search": {
+    "placeholder": "Meklēt (nosaukums, autors, valsts)..."
+  },
+  "filters": {
+    "title": "Filtri",
+    "author": "Autors",
+    "year": "Gads",
+    "continent": "Kontinents",
+    "country": "Valsts",
+    "all": "Visi",
+    "all_countries": "Visas",
+    "apply": "Pielietot",
+    "reset": "Notīrīt",
+    "close": "Aizvērt filtrus"
+  },
+  "list": {
+    "empty": "Nav atrasts neviens objekts pēc šiem filtriem.",
+    "load_more": "Ielādēt vairāk ({current} no {total})",
+    "loading": "Ielādē...",
+    "pull_to_refresh": "Atjaunot..."
+  },
+  "object": {
+    "status_ok": "✓ ok",
+    "status_missing": "⚠️ trūkst info",
+    "status_complete": "Pilnīga info",
+    "status_incomplete": "Trūkst info",
+    "author_prefix": "👤",
+    "date_prefix": "📅",
+    "copy_link": "🔗 Kopēt saiti",
+    "copy_link_short": "🔗",
+    "back_to_list": "📋",
+    "link_copied": "Saite nokopēta! 🔗",
+    "link_copy_failed": "Neizdevās nokopēt saiti"
+  },
+  "slideshow": {
+    "previous": "Iepriekšējais",
+    "next": "Nākamais",
+    "counter": "{current} / {total}"
+  },
+  "mobile": {
+    "list_title": "Akmeņu karte",
+    "filters_title": "Filtri",
+    "object_title": "Objekts",
+    "close": "✕",
+    "zoom_in": "+",
+    "zoom_out": "−",
+    "theme_toggle": "Pārslēgt tēmu"
+  },
+  "footer": {
+    "form_link": "➕ Forma"
+  },
+  "loader": {
+    "loading": "Ielādējas..."
+  },
+  "version": {
+    "prefix": "v"
+  },
+  "alerts": {
+    "config_missing": "Trūkst konfigurācijas. Pārbaudi config.php (MAPBOX_TOKEN un DATA_URL).",
+    "update_available": "Jauna versija ir pieejama! Vai vēlaties atjaunināt?"
+  },
+  "language": {
+    "name": "Latviešu",
+    "code": "lv",
+    "switch_to": "Switch to English"
+  }
+}

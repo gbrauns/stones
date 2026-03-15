@@ -1,0 +1,78 @@
+{
+  "app": {
+    "title": "Stones Map",
+    "description": "Interactive map with stones and monuments from around the world. Search, filter, and explore unique objects with photos, descriptions, and locations."
+  },
+  "header": {
+    "objects": "Objects",
+    "filters": "Filters",
+    "list": "List",
+    "map": "Map"
+  },
+  "search": {
+    "placeholder": "Search (title, author, country)..."
+  },
+  "filters": {
+    "title": "Filters",
+    "author": "Author",
+    "year": "Year",
+    "continent": "Continent",
+    "country": "Country",
+    "all": "All",
+    "all_countries": "All",
+    "apply": "Apply",
+    "reset": "Clear",
+    "close": "Close filters"
+  },
+  "list": {
+    "empty": "No objects found matching these filters.",
+    "load_more": "Load more ({current} of {total})",
+    "loading": "Loading...",
+    "pull_to_refresh": "Refresh..."
+  },
+  "object": {
+    "status_ok": "✓ ok",
+    "status_missing": "⚠️ missing info",
+    "status_complete": "Complete info",
+    "status_incomplete": "Missing info",
+    "author_prefix": "👤",
+    "date_prefix": "📅",
+    "copy_link": "🔗 Copy link",
+    "copy_link_short": "🔗",
+    "back_to_list": "📋",
+    "link_copied": "Link copied! 🔗",
+    "link_copy_failed": "Failed to copy link"
+  },
+  "slideshow": {
+    "previous": "Previous",
+    "next": "Next",
+    "counter": "{current} / {total}"
+  },
+  "mobile": {
+    "list_title": "Stones Map",
+    "filters_title": "Filters",
+    "object_title": "Object",
+    "close": "✕",
+    "zoom_in": "+",
+    "zoom_out": "−",
+    "theme_toggle": "Toggle theme"
+  },
+  "footer": {
+    "form_link": "➕ Form"
+  },
+  "loader": {
+    "loading": "Loading..."
+  },
+  "version": {
+    "prefix": "v"
+  },
+  "alerts": {
+    "config_missing": "Configuration missing. Check config.php (MAPBOX_TOKEN and DATA_URL).",
+    "update_available": "New version available! Would you like to update?"
+  },
+  "language": {
+    "name": "English",
+    "code": "en",
+    "switch_to": "Pārslēgties uz latviešu"
+  }
+}
