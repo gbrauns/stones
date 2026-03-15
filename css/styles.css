@@ -64,8 +64,8 @@ html, body {
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #f0f0f0;
-  border-top-color: #1d3557;
+  border: 4px solid var(--border-light);
+  border-top-color: var(--accent-color);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -76,7 +76,7 @@ html, body {
 
 .loader-text {
   font-size: 16px;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -100,11 +100,11 @@ html, body {
 
 .sidebar-header {
   padding: 14px 14px 10px 14px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: #fff;
+  background: var(--bg-primary);
   z-index: 10;
 }
 
@@ -131,8 +131,8 @@ html, body {
   height: 22px;
   padding: 0 8px;
   border-radius: 999px;
-  border: 1px solid #ddd;
-  background: #f6f6f6;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
   font-size: 12px;
   font-weight: 700;
 }
@@ -168,19 +168,21 @@ html, body {
   width: 100%;
   padding: 9px 10px;
   border-radius: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   font-size: 14px;
   outline: none;
 }
 
 .search-row input:focus {
-  border-color: #999;
+  border-color: var(--text-secondary);
 }
 
 #list-title {
   padding: 10px 14px 0 14px;
   font-size: 13px;
-  color: #444;
+  color: var(--text-secondary);
   font-weight: 700;
 }
 
@@ -200,7 +202,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   transition: transform 0.3s;
   pointer-events: none;
@@ -213,8 +215,8 @@ html, body {
 .pull-to-refresh-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid #f0f0f0;
-  border-top-color: #1d3557;
+  border: 2px solid var(--border-light);
+  border-top-color: var(--accent-color);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin-right: 8px;
@@ -222,7 +224,7 @@ html, body {
 
 /* Skeleton loaders */
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border-color) 50%, var(--bg-secondary) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;
   border-radius: 4px;
@@ -237,7 +239,7 @@ html, body {
   display: flex;
   gap: 10px;
   padding: 12px 12px;
-  border: 1px solid #eee;
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   margin: 8px 0;
   min-height: 44px;
@@ -277,20 +279,20 @@ html, body {
   width: 100%;
   padding: 12px 16px;
   border-radius: 12px;
-  border: 1px solid #ddd;
-  background: #f6f6f6;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  color: #1d3557;
+  color: var(--accent-color);
   margin-top: 8px;
   transition: all 0.2s;
   min-height: 44px;
 }
 
 .load-more-btn:hover {
-  background: #fff;
-  border-color: #999;
+  background: var(--bg-primary);
+  border-color: var(--text-secondary);
 }
 
 .load-more-btn:active {
@@ -305,9 +307,9 @@ html, body {
 #sidebar-version {
   padding: 10px 14px;
   font-size: 11px;
-  color: #999;
+  color: var(--text-tertiary);
   text-align: center;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border-light);
   font-weight: 500;
   letter-spacing: 0.5px;
 }
@@ -316,7 +318,7 @@ html, body {
   display: flex;
   gap: 10px;
   padding: 12px 12px;
-  border: 1px solid #eee;
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   margin: 8px 0;
   cursor: pointer;
@@ -324,7 +326,7 @@ html, body {
 }
 
 .obj-item:hover {
-  background: #fafafa;
+  background: var(--bg-tertiary);
 }
 
 .obj-dot {
@@ -348,12 +350,12 @@ html, body {
 
 .obj-sub {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .obj-empty {
   font-size: 13px;
-  color: #666;
+  color: var(--text-secondary);
   padding: 10px 0;
 }
 
@@ -361,13 +363,13 @@ html, body {
   padding: 10px 14px;
   font-size: 14px;
   text-align: center;
-  border-top: 1px solid #eee;
-  background: #fff;
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-primary);
 }
 
 #footer a {
   text-decoration: none;
-  color: #111;
+  color: var(--text-primary);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -377,7 +379,7 @@ html, body {
 }
 
 #footer a:hover {
-  background: #f6f6f6;
+  background: var(--bg-secondary);
 }
 
 /* Popup */
@@ -406,8 +408,8 @@ html, body {
 
 .back-to-list-btn,
 .copy-link-btn {
-  background: #f6f6f6;
-  border: 1px solid #ddd;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
@@ -423,8 +425,8 @@ html, body {
 
 .back-to-list-btn:hover,
 .copy-link-btn:hover {
-  background: #fff;
-  border-color: #999;
+  background: var(--bg-primary);
+  border-color: var(--text-secondary);
 }
 
 .back-to-list-btn:active,
@@ -441,8 +443,8 @@ html, body {
 
 .popup-chip {
   font-size: 12px;
-  background: #f6f6f6;
-  border: 1px solid #ddd;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 999px;
   padding: 5px 10px;
   line-height: 1.2;
@@ -452,7 +454,7 @@ html, body {
   font-size: 14px;
   line-height: 1.5;
   margin-top: 12px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .badge-ok, .badge-missing {
@@ -472,7 +474,7 @@ html, body {
   position: relative;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--border-color);
   margin: 0 0 12px 0;
   background: #000;
   user-select: none;
@@ -608,10 +610,10 @@ html, body {
   top: 50%;
   transform: translate(-50%, -50%);
   width: min(520px, calc(100vw - 24px));
-  background: #fff;
+  background: var(--bg-primary);
   border-radius: 16px;
-  border: 1px solid #eee;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 12px 40px var(--shadow-lg);
   overflow: hidden;
 }
 
@@ -620,7 +622,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .modal-title {
@@ -629,8 +631,9 @@ html, body {
 }
 
 .modal-close-btn {
-  border: 1px solid #ddd;
-  background: #fff;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   border-radius: 10px;
   padding: 8px 12px;
   font-size: 16px;
@@ -658,19 +661,21 @@ html, body {
   width: 100%;
   padding: 9px 10px;
   border-radius: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   margin-top: 6px;
   font-size: 14px;
   outline: none;
 }
 
 .modal-body select:focus {
-  border-color: #999;
+  border-color: var(--text-secondary);
 }
 
 .modal-actions {
   padding: 12px 14px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border-light);
   display: flex;
   gap: 10px;
   justify-content: flex-end;
@@ -681,8 +686,9 @@ html, body {
   padding: 12px 16px;
   font-size: 14px;
   cursor: pointer;
-  border: 1px solid #ddd;
-  background: #fff;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   min-height: 44px;
   display: flex;
   align-items: center;
@@ -690,13 +696,13 @@ html, body {
 }
 
 .btn-primary {
-  border-color: #1d3557;
-  background: #1d3557;
+  border-color: var(--accent-color);
+  background: var(--accent-color);
   color: #fff;
 }
 
 .btn-secondary {
-  background: #fff;
+  background: var(--bg-primary);
 }
 
 .sr-only {
@@ -714,8 +720,8 @@ html, body {
 /* Mobile tabs (hidden on desktop) */
 .mobile-tabs {
   display: none;
-  background: #fff;
-  border-bottom: 1px solid #ddd;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
   padding: 0;
   position: sticky;
   top: 0;
@@ -729,7 +735,7 @@ html, body {
   background: transparent;
   font-size: 15px;
   font-weight: 600;
-  color: #666;
+  color: var(--text-secondary);
   cursor: pointer;
   position: relative;
   transition: color 0.2s;
@@ -741,7 +747,7 @@ html, body {
 }
 
 .mobile-tab.active {
-  color: #1d3557;
+  color: var(--accent-color);
 }
 
 .mobile-tab.active::after {
@@ -751,7 +757,7 @@ html, body {
   left: 0;
   right: 0;
   height: 3px;
-  background: #1d3557;
+  background: var(--accent-color);
   border-radius: 3px 3px 0 0;
 }
 
@@ -763,7 +769,7 @@ html, body {
   height: 18px;
   padding: 0 6px;
   border-radius: 999px;
-  background: #1d3557;
+  background: var(--accent-color);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -863,7 +869,7 @@ html, body {
     transform: translateX(-50%);
     width: 40px;
     height: 4px;
-    background: #ddd;
+    background: var(--border-color);
     border-radius: 2px;
   }
 
@@ -872,10 +878,10 @@ html, body {
     position: static;
     border-radius: 0;
     border: none;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border-light);
     padding: 12px 14px;
     text-align: center;
-    background: #fff;
+    background: var(--bg-primary);
   }
 
   /* Mobile popup optimizations */
