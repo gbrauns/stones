@@ -318,7 +318,19 @@ map.on('click', 'clusters', (e) => {
 map.on('click', 'stones-layer', (e) => {
   const f = e.features && e.features[0];
   if (!f) return;
-  openFeaturePopup(f, f.geometry.coordinates);
+
+  const coords = f.geometry.coordinates;
+
+  // Pan map to ensure popup is visible (only on desktop)
+  if (!isMobileView()) {
+    flyToWithPopupSpace(coords, map.getZoom());
+    setTimeout(() => {
+      openFeaturePopup(f, coords);
+    }, 250);
+  } else {
+    // On mobile, open immediately (bottom sheet)
+    openFeaturePopup(f, coords);
+  }
 });
 
 // Cursor styles
@@ -817,6 +829,41 @@ function isMobileView() {
   return window.innerWidth <= 720;
 }
 
+// Smart map positioning to ensure popup is fully visible
+function flyToWithPopupSpace(coords, zoom) {
+  const currentZoom = map.getZoom();
+  const targetZoom = Math.max(currentZoom, zoom || 7);
+
+  if (isMobileView()) {
+    // On mobile, just center on the point
+    map.flyTo({
+      center: coords,
+      zoom: targetZoom,
+      speed: 1.2
+    });
+  } else {
+    // On desktop, offset to the left to make room for popup on the right
+    // Popup is ~460px wide, so we need to shift the map to account for it
+    const popupWidth = 480; // Max popup width in pixels
+    const mapWidth = map.getContainer().clientWidth;
+
+    // Calculate offset in pixels - shift left by ~half popup width
+    const offsetX = -popupWidth / 2;
+
+    // Convert pixel offset to lng/lat offset
+    const point = map.project(coords);
+    point.x += offsetX;
+    const offsetCenter = map.unproject(point);
+
+    map.flyTo({
+      center: offsetCenter,
+      zoom: targetZoom,
+      speed: 1.2,
+      padding: { right: 20, left: 20, top: 50, bottom: 50 }
+    });
+  }
+}
+
 // Global function for copying to clipboard (used in mobile sheet)
 window.copyToClipboard = function(text) {
   navigator.clipboard.writeText(text).then(() => {
@@ -1087,7 +1134,7 @@ function attachMobileListItemListeners() {
       if (!feature) return;
 
       const coords = feature.geometry.coordinates;
-      map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 7), speed: 1.2 });
+      flyToWithPopupSpace(coords, 7);
 
       setTimeout(() => {
         openFeaturePopup(feature, coords);
@@ -1853,7 +1900,7 @@ function renderObjectItem(f, box) {
 
   item.addEventListener('click', () => {
     const coords = f.geometry.coordinates;
-    map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 7), speed: 1.2 });
+    flyToWithPopupSpace(coords, 7);
 
     setTimeout(() => {
       openFeaturePopup(f, coords);
@@ -1953,12 +2000,8 @@ function openPopupFromHash() {
 
   const coords = feature.geometry.coordinates;
 
-  // Fly to objekta koordinātām
-  map.flyTo({
-    center: coords,
-    zoom: 8,
-    speed: 1.5
-  });
+  // Fly to objekta koordinātām with smart positioning
+  flyToWithPopupSpace(coords, 8);
 
   // Atver popup pēc nelielas pauzes
   setTimeout(() => {
