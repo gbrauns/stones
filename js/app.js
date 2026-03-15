@@ -846,25 +846,37 @@ function flyToWithPopupSpace(coords, zoom) {
       speed: 1.2
     });
   } else {
-    // On desktop, offset to the left to make room for popup on the right
-    // Popup is ~460px wide, so we need to shift the map to account for it
-    const popupWidth = 480; // Max popup width in pixels
+    // On desktop, calculate smart offset based on screen size
     const mapWidth = map.getContainer().clientWidth;
+    const popupWidth = 480; // Max popup width
 
-    // Calculate offset in pixels - shift left by ~half popup width
-    const offsetX = -popupWidth / 2;
+    // Only offset if there's enough space
+    // Need at least popupWidth + 200px for comfortable viewing
+    const hasSpaceForOffset = mapWidth > (popupWidth + 200);
 
-    // Convert pixel offset to lng/lat offset
-    const point = map.project(coords);
-    point.x += offsetX;
-    const offsetCenter = map.unproject(point);
+    if (hasSpaceForOffset) {
+      // Shift left to make room for popup on the right
+      const offsetX = -popupWidth / 2.5; // Reduced offset for better centering
 
-    map.flyTo({
-      center: offsetCenter,
-      zoom: targetZoom,
-      speed: 1.2,
-      padding: { right: 20, left: 20, top: 50, bottom: 50 }
-    });
+      const point = map.project(coords);
+      point.x += offsetX;
+      const offsetCenter = map.unproject(point);
+
+      map.flyTo({
+        center: offsetCenter,
+        zoom: targetZoom,
+        speed: 1.2,
+        padding: { right: 240, left: 20, top: 50, bottom: 50 }
+      });
+    } else {
+      // Small screen - just center with padding
+      map.flyTo({
+        center: coords,
+        zoom: targetZoom,
+        speed: 1.2,
+        padding: { right: 10, left: 10, top: 40, bottom: 40 }
+      });
+    }
   }
 }
 
@@ -2129,7 +2141,10 @@ function openFeaturePopup(feature, lngLat) {
 
   activePopup = new mapboxgl.Popup({
     closeOnClick: true,
-    maxWidth: '460px'
+    maxWidth: '460px',
+    offset: 25,
+    closeButton: true,
+    focusAfterOpen: true
   })
     .setLngLat(lngLat)
     .setHTML(html)
