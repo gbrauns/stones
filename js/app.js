@@ -314,6 +314,104 @@ function initModal() {
   initModalSwipe();
 }
 
+async function reloadMapLayers() {
+  console.log('[Map] Reloading layers after style change');
+
+  // Re-add countries layer
+  await addCountriesLayer();
+
+  // Re-add stones source with clustering
+  if (!map.getSource('stones')) {
+    map.addSource('stones', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: filteredFeatures.length > 0 ? filteredFeatures : allFeatures },
+      cluster: true,
+      clusterMaxZoom: 14,
+      clusterRadius: 50
+    });
+  }
+
+  // Re-add cluster circles layer
+  if (!map.getLayer('clusters')) {
+    map.addLayer({
+      id: 'clusters',
+      type: 'circle',
+      source: 'stones',
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': [
+          'step',
+          ['get', 'point_count'],
+          '#51bbd6',
+          10,
+          '#f1f075',
+          30,
+          '#f28cb1'
+        ],
+        'circle-radius': [
+          'step',
+          ['get', 'point_count'],
+          20,
+          10,
+          30,
+          30,
+          40
+        ],
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#fff'
+      }
+    });
+  }
+
+  // Re-add cluster count layer
+  if (!map.getLayer('cluster-count')) {
+    map.addLayer({
+      id: 'cluster-count',
+      type: 'symbol',
+      source: 'stones',
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+        'text-size': 14
+      },
+      paint: {
+        'text-color': '#ffffff'
+      }
+    });
+  }
+
+  // Re-add individual stones layer
+  if (!map.getLayer('stones-layer')) {
+    map.addLayer({
+      id: 'stones-layer',
+      type: 'circle',
+      source: 'stones',
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-radius': 6,
+        'circle-color': [
+          'case',
+          ['==', ['get', 'missing_info'], true],
+          '#e63946',
+          '#1d3557'
+        ],
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#fff'
+      }
+    });
+  }
+
+  // Move countries layer below stones
+  tryMoveCountriesBelowStones();
+
+  // Restore country coloring
+  updateActiveCountries();
+  updateFilteredCountries();
+
+  console.log('[Map] Layers reloaded successfully');
+}
+
 function initDarkMode() {
   const toggle = document.getElementById('themeToggle');
   if (!toggle) return;
@@ -329,6 +427,11 @@ function initDarkMode() {
   // Update Mapbox style
   if (theme === 'dark') {
     map.setStyle('mapbox://styles/mapbox/dark-v11');
+    // Re-add sources and layers after style loads
+    map.once('style.load', () => {
+      console.log('[Dark Mode] Initial dark style loaded, re-adding layers');
+      reloadMapLayers();
+    });
   }
 
   toggle.addEventListener('click', () => {
@@ -339,8 +442,15 @@ function initDarkMode() {
     localStorage.setItem('theme', newTheme);
     toggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
 
-    // Update Mapbox style
-    map.setStyle(newTheme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11');
+    // Update Mapbox style and reload layers
+    const newStyle = newTheme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11';
+    map.setStyle(newStyle);
+
+    // Re-add sources and layers after style loads
+    map.once('style.load', () => {
+      console.log('[Dark Mode] Style loaded, re-adding layers');
+      reloadMapLayers();
+    });
 
     // Haptic feedback
     if (window.navigator.vibrate) {
@@ -354,7 +464,15 @@ function initDarkMode() {
       const newTheme = e.matches ? 'dark' : 'light';
       document.documentElement.setAttribute('data-theme', newTheme);
       toggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
-      map.setStyle(newTheme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11');
+
+      const newStyle = newTheme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11';
+      map.setStyle(newStyle);
+
+      // Re-add sources and layers after style loads
+      map.once('style.load', () => {
+        console.log('[Dark Mode] System theme changed, re-adding layers');
+        reloadMapLayers();
+      });
     }
   });
 }

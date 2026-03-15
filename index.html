@@ -10,7 +10,7 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=31" />
+  <link rel="stylesheet" href="css/styles.css?v=32" />
 </head>
 <body>
 
@@ -69,6 +69,9 @@
     <button id="mobileFiltersBtn" class="mobile-control-btn" type="button" title="Filtri">
       🔍
     </button>
+    <button id="mobileThemeToggle" class="mobile-control-btn" type="button" title="Pārslēgt tēmu">
+      🌙
+    </button>
   </div>
 
   <!-- Mobile zoom controls -->
@@ -103,6 +106,18 @@
 
     <div class="mobile-overlay-footer">
       <a href="https://forms.gle/JcUwCwtvCwwk2Yxr7" target="_blank" rel="noopener noreferrer">➕ Forma</a>
+    </div>
+  </div>
+
+  <!-- Mobile object detail sheet (bottom sheet) -->
+  <div id="mobileObjectSheet" class="mobile-sheet">
+    <div class="mobile-sheet-handle"></div>
+    <div class="mobile-sheet-header">
+      <h3 id="mobileSheetTitle" class="mobile-sheet-title">Objekts</h3>
+      <button id="closeMobileSheet" class="mobile-close-btn" type="button">✕</button>
+    </div>
+    <div id="mobileSheetContent" class="mobile-sheet-content">
+      <!-- Content will be dynamically filled -->
     </div>
   </div>
 
@@ -230,7 +245,7 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<script src="config.php?v=31"></script>
-<script src="js/app.js?v=31"></script>
+<script src="config.php?v=32"></script>
+<script src="js/app.js?v=32"></script>
 </body>
 </html>
