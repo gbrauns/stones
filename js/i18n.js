@@ -8,8 +8,14 @@ class I18n {
 
   // Detect browser language, default to Latvian
   detectLanguage() {
-    const browserLang = navigator.language.toLowerCase().split('-')[0];
-    return this.supportedLanguages.includes(browserLang) ? browserLang : 'lv';
+    try {
+      if (!navigator.language) return 'lv';
+      const browserLang = navigator.language.toLowerCase().split('-')[0];
+      return this.supportedLanguages.includes(browserLang) ? browserLang : 'lv';
+    } catch (e) {
+      console.warn('[i18n] Language detection failed:', e);
+      return 'lv';
+    }
   }
 
   // Get stored language from localStorage

@@ -294,7 +294,7 @@ async function loadAppData() {
   } else {
     setTimeout(loadCountries, 1000);
   }
-});
+}
 
 // Click uz cluster - zoom in
 map.on('click', 'clusters', (e) => {
